@@ -8,7 +8,7 @@ import {
 
 import {SearcherClient} from '../../sdk/searcher';
 import {Bundle} from '../../sdk/types';
-import {deserializeTransactions, isError} from '../../sdk/utils';
+import {isError} from '../../sdk/utils';
 
 const MEMO_PROGRAM_ID = 'Memo1UhkJRfHyvLMcVucJwxXeuD728EqVDDwQDxFMNo';
 
