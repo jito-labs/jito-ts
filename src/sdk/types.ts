@@ -35,7 +35,10 @@ export class Bundle implements IBundle {
     }
 
     this.transactions.push(...signedTransactions);
-    this.packets.concat(serializeTransactions(signedTransactions));
+    this.packets = this.packets.concat(
+      serializeTransactions(signedTransactions)
+    );
+
     return this;
   }
 
@@ -45,6 +48,7 @@ export class Bundle implements IBundle {
     tipLamports: number,
     tipAccount: PublicKey,
     recentBlockhash: string,
+    lastValidBlockHeight: number,
     tx?: Transaction
   ): Bundle | Error {
     const numTransactions = this.transactions.length + 1;
@@ -54,30 +58,30 @@ export class Bundle implements IBundle {
       );
     }
 
-    let tipTx;
     const tipIx = SystemProgram.transfer({
       fromPubkey: keypair.publicKey,
       toPubkey: tipAccount,
       lamports: tipLamports,
     });
 
+    let tipTx;
     if (!tx) {
       tipTx = new Transaction();
-      tipTx.add(tipIx);
-      tipTx.recentBlockhash = recentBlockhash;
-      tipTx.sign({
-        publicKey: keypair.publicKey,
-        secretKey: keypair.secretKey,
-      });
-    } else if (!tx.verifySignatures()) {
-      return new Error('Transaction failed signature verification');
     } else {
-      tx.add(tipIx);
       tipTx = tx;
     }
 
+    tipTx.add(tipIx);
+    tipTx.recentBlockhash = recentBlockhash;
+    tipTx.lastValidBlockHeight = lastValidBlockHeight;
+
+    tipTx.sign({
+      publicKey: keypair.publicKey,
+      secretKey: keypair.secretKey,
+    });
+
     this.transactions.push(tipTx);
-    this.packets.concat(serializeTransactions([tipTx]));
+    this.packets = this.packets.concat(serializeTransactions([tipTx]));
 
     return this;
   }

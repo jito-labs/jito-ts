@@ -7,6 +7,7 @@ import {
   Metadata,
   ServiceError,
 } from '@grpc/grpc-js';
+
 import {Keypair} from '@solana/web3.js';
 import {NextCall} from '@grpc/grpc-js/build/src/client-interceptors';
 
