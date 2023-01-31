@@ -1,18 +1,10 @@
-import {Bundle} from '../../sdk/types';
-
 require('dotenv').config();
 
-import {
-  Keypair,
-  Connection,
-  PublicKey,
-  Transaction,
-  TransactionInstruction,
-} from '@solana/web3.js';
-import {searcherClient} from '../../sdk/searcher';
-
+import {Keypair, Connection} from '@solana/web3.js';
 import * as Fs from 'fs';
-import {deriveTipAddress, isError} from '../../sdk/utils';
+
+import {searcherClient} from '../../sdk/searcher';
+import {onBundleResult, onPendingTransactions} from './utils';
 
 const main = async () => {
   const blockEngineUrl = process.env.BLOCK_ENGINE_URL || '';
@@ -39,55 +31,14 @@ const main = async () => {
   console.log('RPC_URL:', rpcUrl);
   const conn = new Connection(rpcUrl, 'confirmed');
 
-  const _tipPaymentProgram = process.env.TIP_PAYMENT_PROGRAM || '';
-  console.log('TIP_PAYMENT_PROGRAM:', _tipPaymentProgram);
-  const tipPaymentProgram = new PublicKey(_tipPaymentProgram);
-  const tipPda = deriveTipAddress(tipPaymentProgram, 0);
-
-  c.onPendingTransactions(
+  await onPendingTransactions(
+    c,
     accounts,
-    async (transactions: Transaction[]) => {
-      console.log('received transactions:', transactions);
-
-      const resp = await conn.getLatestBlockhash('processed');
-
-      const bundles = transactions.map(tx => {
-        const b = new Bundle([tx], bundleTransactionLimit);
-        return b;
-
-        // let maybeBundle = b.addSignedTransactions(
-        //   buildMemoTransaction(keypair, resp.blockhash)
-        // );
-        // if (isError(maybeBundle)) {
-        //   throw maybeBundle;
-        // }
-        //
-        // maybeBundle = maybeBundle.attachTip(
-        //   keypair,
-        //   100_000_000,
-        //   tipPda,
-        //   resp.blockhash
-        // );
-        // if (isError(maybeBundle)) {
-        //   throw maybeBundle;
-        // }
-        //
-        // return maybeBundle;
-      });
-
-      bundles.map(async b => {
-        try {
-          const resp = await c.sendBundle(b);
-          console.log('resp:', resp);
-        } catch (e) {
-          console.log('error:', e);
-        }
-      });
-    },
-    (e: Error) => {
-      throw e;
-    }
+    bundleTransactionLimit,
+    keypair,
+    conn
   );
+  onBundleResult(c);
 };
 
 main()
@@ -97,32 +48,3 @@ main()
   .catch(e => {
     throw e;
   });
-
-const MEMO_PROGRAM_ID = 'Memo1UhkJRfHyvLMcVucJwxXeuD728EqVDDwQDxFMNo';
-
-const buildMemoTransaction = (
-  keypair: Keypair,
-  recentBlockhash: string
-): Transaction => {
-  const ix = new TransactionInstruction({
-    keys: [
-      {
-        pubkey: keypair.publicKey,
-        isSigner: true,
-        isWritable: true,
-      },
-    ],
-    programId: new PublicKey(MEMO_PROGRAM_ID),
-    data: Buffer.from('Jito Backrun'),
-  });
-
-  const tx = new Transaction();
-  tx.recentBlockhash = recentBlockhash;
-  tx.add(ix);
-  tx.sign({
-    publicKey: keypair.publicKey,
-    secretKey: keypair.secretKey,
-  });
-
-  return tx;
-};

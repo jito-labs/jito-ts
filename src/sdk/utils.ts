@@ -1,29 +1,6 @@
-import {PublicKey, Transaction} from '@solana/web3.js';
-import {Meta, Packet, PacketFlags} from '../gen/packet';
+import {Transaction} from '@solana/web3.js';
 
-// Choose any of these seeds to derive the PDA used for tipping.
-const TIP_SEEDS = [
-  'TIP_ACCOUNT_0',
-  'TIP_ACCOUNT_1',
-  'TIP_ACCOUNT_2',
-  'TIP_ACCOUNT_3',
-  'TIP_ACCOUNT_4',
-  'TIP_ACCOUNT_5',
-  'TIP_ACCOUNT_6',
-  'TIP_ACCOUNT_7',
-];
-
-export const deriveTipAddress = (
-  tipPaymentProgramId: PublicKey,
-  tipSeedIdx: number
-): PublicKey => {
-  const [tipPda] = PublicKey.findProgramAddressSync(
-    [Buffer.from(TIP_SEEDS[tipSeedIdx], 'utf8')],
-    tipPaymentProgramId
-  );
-
-  return tipPda;
-};
+import {Meta, Packet} from '../gen/packet';
 
 export const unixTimestampFromDate = (date: Date) => {
   return Math.floor(date.getTime() / 1000);
