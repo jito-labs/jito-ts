@@ -15,7 +15,7 @@ import {
 } from '../gen/searcher';
 import {authInterceptor, AuthProvider} from './auth';
 import {Bundle} from './types';
-import {deserializeTransactions} from "./utils";
+import {deserializeTransactions} from './utils';
 
 export class SearcherClient {
   private client: SearcherServiceClient;
