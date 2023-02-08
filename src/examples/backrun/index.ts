@@ -1,9 +1,9 @@
 require('dotenv').config();
 
-import {Keypair, Connection} from '@solana/web3.js';
+import {Keypair, Connection, PublicKey} from '@solana/web3.js';
 import * as Fs from 'fs';
 
-import {searcherClient} from '../../sdk/searcher';
+import {searcherClient} from '../../sdk/block-engine/searcher';
 import {onBundleResult, onPendingTransactions} from './utils';
 
 const main = async () => {
@@ -17,9 +17,9 @@ const main = async () => {
   );
   const keypair = Keypair.fromSecretKey(decodedKey);
 
-  const _accounts = process.env.ACCOUNTS_OF_INTEREST || '';
+  const _accounts = (process.env.ACCOUNTS_OF_INTEREST || '').split(',');
   console.log('ACCOUNTS_OF_INTEREST:', _accounts);
-  const accounts = _accounts.split(',');
+  const accounts = _accounts.map(a => new PublicKey(a));
 
   const bundleTransactionLimit = parseInt(
     process.env.BUNDLE_TRANSACTION_LIMIT || '0'

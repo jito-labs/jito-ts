@@ -21,7 +21,7 @@ import {
   RefreshAccessTokenResponse,
   Role,
   Token,
-} from '../gen/auth';
+} from '../../gen/block-engine/auth';
 import {unixTimestampFromDate} from './utils';
 
 // Intercepts requests and sets the auth header.

@@ -33,6 +33,7 @@ export interface Rejected {
   winningBatchBidRejected?: WinningBatchBidRejected | undefined;
   simulationFailure?: SimulationFailure | undefined;
   internalError?: InternalError | undefined;
+  droppedBundle?: DroppedBundle | undefined;
 }
 
 /**
@@ -65,6 +66,11 @@ export interface SimulationFailure {
 
 /** Bundle dropped due to an internal error. */
 export interface InternalError {
+  msg: string;
+}
+
+/** Bundle dropped (e.g. because no leader upcoming) */
+export interface DroppedBundle {
   msg: string;
 }
 
@@ -275,6 +281,7 @@ function createBaseRejected(): Rejected {
     winningBatchBidRejected: undefined,
     simulationFailure: undefined,
     internalError: undefined,
+    droppedBundle: undefined,
   };
 }
 
@@ -291,6 +298,9 @@ export const Rejected = {
     }
     if (message.internalError !== undefined) {
       InternalError.encode(message.internalError, writer.uint32(34).fork()).ldelim();
+    }
+    if (message.droppedBundle !== undefined) {
+      DroppedBundle.encode(message.droppedBundle, writer.uint32(42).fork()).ldelim();
     }
     return writer;
   },
@@ -314,6 +324,9 @@ export const Rejected = {
         case 4:
           message.internalError = InternalError.decode(reader, reader.uint32());
           break;
+        case 5:
+          message.droppedBundle = DroppedBundle.decode(reader, reader.uint32());
+          break;
         default:
           reader.skipType(tag & 7);
           break;
@@ -334,6 +347,7 @@ export const Rejected = {
         ? SimulationFailure.fromJSON(object.simulationFailure)
         : undefined,
       internalError: isSet(object.internalError) ? InternalError.fromJSON(object.internalError) : undefined,
+      droppedBundle: isSet(object.droppedBundle) ? DroppedBundle.fromJSON(object.droppedBundle) : undefined,
     };
   },
 
@@ -350,6 +364,8 @@ export const Rejected = {
       : undefined);
     message.internalError !== undefined &&
       (obj.internalError = message.internalError ? InternalError.toJSON(message.internalError) : undefined);
+    message.droppedBundle !== undefined &&
+      (obj.droppedBundle = message.droppedBundle ? DroppedBundle.toJSON(message.droppedBundle) : undefined);
     return obj;
   },
 
@@ -372,6 +388,9 @@ export const Rejected = {
       : undefined;
     message.internalError = (object.internalError !== undefined && object.internalError !== null)
       ? InternalError.fromPartial(object.internalError)
+      : undefined;
+    message.droppedBundle = (object.droppedBundle !== undefined && object.droppedBundle !== null)
+      ? DroppedBundle.fromPartial(object.droppedBundle)
       : undefined;
     return message;
   },
@@ -627,6 +646,57 @@ export const InternalError = {
 
   fromPartial<I extends Exact<DeepPartial<InternalError>, I>>(object: I): InternalError {
     const message = createBaseInternalError();
+    message.msg = object.msg ?? "";
+    return message;
+  },
+};
+
+function createBaseDroppedBundle(): DroppedBundle {
+  return { msg: "" };
+}
+
+export const DroppedBundle = {
+  encode(message: DroppedBundle, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.msg !== "") {
+      writer.uint32(10).string(message.msg);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): DroppedBundle {
+    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseDroppedBundle();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          message.msg = reader.string();
+          break;
+        default:
+          reader.skipType(tag & 7);
+          break;
+      }
+    }
+    return message;
+  },
+
+  fromJSON(object: any): DroppedBundle {
+    return { msg: isSet(object.msg) ? String(object.msg) : "" };
+  },
+
+  toJSON(message: DroppedBundle): unknown {
+    const obj: any = {};
+    message.msg !== undefined && (obj.msg = message.msg);
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<DroppedBundle>, I>>(base?: I): DroppedBundle {
+    return DroppedBundle.fromPartial(base ?? {});
+  },
+
+  fromPartial<I extends Exact<DeepPartial<DroppedBundle>, I>>(object: I): DroppedBundle {
+    const message = createBaseDroppedBundle();
     message.msg = object.msg ?? "";
     return message;
   },

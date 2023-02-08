@@ -1,6 +1,6 @@
 import {Transaction} from '@solana/web3.js';
 
-import {Meta, Packet} from '../gen/packet';
+import {Meta, Packet} from '../../gen/block-engine/packet';
 
 export const unixTimestampFromDate = (date: Date) => {
   return Math.floor(date.getTime() / 1000);

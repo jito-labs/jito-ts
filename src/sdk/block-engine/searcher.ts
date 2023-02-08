@@ -1,11 +1,12 @@
-import {Keypair, Transaction} from '@solana/web3.js';
+import {Keypair, PublicKey, Transaction} from '@solana/web3.js';
 import {
   ChannelCredentials,
   ClientReadableStream,
   ServiceError,
 } from '@grpc/grpc-js';
 
-import {AuthServiceClient} from '../gen/auth';
+import {AuthServiceClient} from '../../gen/block-engine/auth';
+import {BundleResult} from '../../gen/block-engine/bundle';
 import {
   ConnectedLeadersResponse,
   GetTipAccountsResponse,
@@ -16,11 +17,10 @@ import {
   SendBundleRequest,
   SendBundleResponse,
   SlotList,
-} from '../gen/searcher';
+} from '../../gen/block-engine/searcher';
 import {authInterceptor, AuthProvider} from './auth';
 import {Bundle} from './types';
 import {deserializeTransactions} from './utils';
-import {BundleResult} from '../gen/bundle';
 
 export class SearcherClient {
   private client: SearcherServiceClient;
@@ -104,19 +104,21 @@ export class SearcherClient {
 
   // Accepts a list of accounts and filters transactions that write lock any of the accounts.
   onPendingTransactions(
-    accounts: string[],
+    accounts: PublicKey[],
     successCallback: (transactions: Transaction[]) => void,
     errorCallback: (e: Error) => void
   ) {
     const stream: ClientReadableStream<PendingTxNotification> =
       this.client.subscribePendingTransactions({
-        accounts,
+        accounts: accounts.map(a => a.toString()),
       } as PendingTxSubscriptionRequest);
 
     stream.on('readable', () => {
       successCallback(deserializeTransactions(stream.read(1).transactions));
     });
-    stream.on('error', () => errorCallback(new Error('Stream error')));
+    stream.on('error', e =>
+      errorCallback(new Error(`Stream error: ${e.message}`))
+    );
   }
 
   // Subscribes to bundle results.
@@ -130,7 +132,9 @@ export class SearcherClient {
     stream.on('readable', () => {
       successCallback(stream.read(1));
     });
-    stream.on('error', () => errorCallback(new Error('Stream error')));
+    stream.on('error', e =>
+      errorCallback(new Error(`Stream error: ${e.message}`))
+    );
   }
 }
 

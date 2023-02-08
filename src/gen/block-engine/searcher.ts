@@ -34,6 +34,19 @@ export interface SendBundleResponse {
   uuid: string;
 }
 
+export interface ProgramSubscriptionV0 {
+  programs: string[];
+}
+
+export interface WriteLockedAccountSubscriptionV0 {
+  accounts: string[];
+}
+
+export interface MempoolSubscription {
+  programV0Sub?: ProgramSubscriptionV0 | undefined;
+  wlaV0Sub?: WriteLockedAccountSubscriptionV0 | undefined;
+}
+
 export interface PendingTxSubscriptionRequest {
   /**
    * list of accounts to subscribe to
@@ -252,6 +265,188 @@ export const SendBundleResponse = {
   fromPartial<I extends Exact<DeepPartial<SendBundleResponse>, I>>(object: I): SendBundleResponse {
     const message = createBaseSendBundleResponse();
     message.uuid = object.uuid ?? "";
+    return message;
+  },
+};
+
+function createBaseProgramSubscriptionV0(): ProgramSubscriptionV0 {
+  return { programs: [] };
+}
+
+export const ProgramSubscriptionV0 = {
+  encode(message: ProgramSubscriptionV0, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    for (const v of message.programs) {
+      writer.uint32(10).string(v!);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): ProgramSubscriptionV0 {
+    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseProgramSubscriptionV0();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          message.programs.push(reader.string());
+          break;
+        default:
+          reader.skipType(tag & 7);
+          break;
+      }
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ProgramSubscriptionV0 {
+    return { programs: Array.isArray(object?.programs) ? object.programs.map((e: any) => String(e)) : [] };
+  },
+
+  toJSON(message: ProgramSubscriptionV0): unknown {
+    const obj: any = {};
+    if (message.programs) {
+      obj.programs = message.programs.map((e) => e);
+    } else {
+      obj.programs = [];
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<ProgramSubscriptionV0>, I>>(base?: I): ProgramSubscriptionV0 {
+    return ProgramSubscriptionV0.fromPartial(base ?? {});
+  },
+
+  fromPartial<I extends Exact<DeepPartial<ProgramSubscriptionV0>, I>>(object: I): ProgramSubscriptionV0 {
+    const message = createBaseProgramSubscriptionV0();
+    message.programs = object.programs?.map((e) => e) || [];
+    return message;
+  },
+};
+
+function createBaseWriteLockedAccountSubscriptionV0(): WriteLockedAccountSubscriptionV0 {
+  return { accounts: [] };
+}
+
+export const WriteLockedAccountSubscriptionV0 = {
+  encode(message: WriteLockedAccountSubscriptionV0, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    for (const v of message.accounts) {
+      writer.uint32(10).string(v!);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): WriteLockedAccountSubscriptionV0 {
+    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseWriteLockedAccountSubscriptionV0();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          message.accounts.push(reader.string());
+          break;
+        default:
+          reader.skipType(tag & 7);
+          break;
+      }
+    }
+    return message;
+  },
+
+  fromJSON(object: any): WriteLockedAccountSubscriptionV0 {
+    return { accounts: Array.isArray(object?.accounts) ? object.accounts.map((e: any) => String(e)) : [] };
+  },
+
+  toJSON(message: WriteLockedAccountSubscriptionV0): unknown {
+    const obj: any = {};
+    if (message.accounts) {
+      obj.accounts = message.accounts.map((e) => e);
+    } else {
+      obj.accounts = [];
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<WriteLockedAccountSubscriptionV0>, I>>(
+    base?: I,
+  ): WriteLockedAccountSubscriptionV0 {
+    return WriteLockedAccountSubscriptionV0.fromPartial(base ?? {});
+  },
+
+  fromPartial<I extends Exact<DeepPartial<WriteLockedAccountSubscriptionV0>, I>>(
+    object: I,
+  ): WriteLockedAccountSubscriptionV0 {
+    const message = createBaseWriteLockedAccountSubscriptionV0();
+    message.accounts = object.accounts?.map((e) => e) || [];
+    return message;
+  },
+};
+
+function createBaseMempoolSubscription(): MempoolSubscription {
+  return { programV0Sub: undefined, wlaV0Sub: undefined };
+}
+
+export const MempoolSubscription = {
+  encode(message: MempoolSubscription, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.programV0Sub !== undefined) {
+      ProgramSubscriptionV0.encode(message.programV0Sub, writer.uint32(10).fork()).ldelim();
+    }
+    if (message.wlaV0Sub !== undefined) {
+      WriteLockedAccountSubscriptionV0.encode(message.wlaV0Sub, writer.uint32(18).fork()).ldelim();
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): MempoolSubscription {
+    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseMempoolSubscription();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          message.programV0Sub = ProgramSubscriptionV0.decode(reader, reader.uint32());
+          break;
+        case 2:
+          message.wlaV0Sub = WriteLockedAccountSubscriptionV0.decode(reader, reader.uint32());
+          break;
+        default:
+          reader.skipType(tag & 7);
+          break;
+      }
+    }
+    return message;
+  },
+
+  fromJSON(object: any): MempoolSubscription {
+    return {
+      programV0Sub: isSet(object.programV0Sub) ? ProgramSubscriptionV0.fromJSON(object.programV0Sub) : undefined,
+      wlaV0Sub: isSet(object.wlaV0Sub) ? WriteLockedAccountSubscriptionV0.fromJSON(object.wlaV0Sub) : undefined,
+    };
+  },
+
+  toJSON(message: MempoolSubscription): unknown {
+    const obj: any = {};
+    message.programV0Sub !== undefined &&
+      (obj.programV0Sub = message.programV0Sub ? ProgramSubscriptionV0.toJSON(message.programV0Sub) : undefined);
+    message.wlaV0Sub !== undefined &&
+      (obj.wlaV0Sub = message.wlaV0Sub ? WriteLockedAccountSubscriptionV0.toJSON(message.wlaV0Sub) : undefined);
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<MempoolSubscription>, I>>(base?: I): MempoolSubscription {
+    return MempoolSubscription.fromPartial(base ?? {});
+  },
+
+  fromPartial<I extends Exact<DeepPartial<MempoolSubscription>, I>>(object: I): MempoolSubscription {
+    const message = createBaseMempoolSubscription();
+    message.programV0Sub = (object.programV0Sub !== undefined && object.programV0Sub !== null)
+      ? ProgramSubscriptionV0.fromPartial(object.programV0Sub)
+      : undefined;
+    message.wlaV0Sub = (object.wlaV0Sub !== undefined && object.wlaV0Sub !== null)
+      ? WriteLockedAccountSubscriptionV0.fromPartial(object.wlaV0Sub)
+      : undefined;
     return message;
   },
 };
@@ -849,6 +1044,7 @@ export const SearcherServiceService = {
   /**
    * RPC endpoint to subscribe to pending transactions. Clients can provide a list of base58 encoded accounts.
    * Any transactions that write-lock the provided accounts will be streamed to the searcher.
+   * NOTE: DEPRECATED SOON!!!
    */
   subscribePendingTransactions: {
     path: "/searcher.SearcherService/SubscribePendingTransactions",
@@ -857,6 +1053,16 @@ export const SearcherServiceService = {
     requestSerialize: (value: PendingTxSubscriptionRequest) =>
       Buffer.from(PendingTxSubscriptionRequest.encode(value).finish()),
     requestDeserialize: (value: Buffer) => PendingTxSubscriptionRequest.decode(value),
+    responseSerialize: (value: PendingTxNotification) => Buffer.from(PendingTxNotification.encode(value).finish()),
+    responseDeserialize: (value: Buffer) => PendingTxNotification.decode(value),
+  },
+  /** RPC endpoint to subscribe to mempool based on a few filters */
+  subscribeMempool: {
+    path: "/searcher.SearcherService/SubscribeMempool",
+    requestStream: false,
+    responseStream: true,
+    requestSerialize: (value: MempoolSubscription) => Buffer.from(MempoolSubscription.encode(value).finish()),
+    requestDeserialize: (value: Buffer) => MempoolSubscription.decode(value),
     responseSerialize: (value: PendingTxNotification) => Buffer.from(PendingTxNotification.encode(value).finish()),
     responseDeserialize: (value: Buffer) => PendingTxNotification.decode(value),
   },
@@ -913,8 +1119,11 @@ export interface SearcherServiceServer extends UntypedServiceImplementation {
   /**
    * RPC endpoint to subscribe to pending transactions. Clients can provide a list of base58 encoded accounts.
    * Any transactions that write-lock the provided accounts will be streamed to the searcher.
+   * NOTE: DEPRECATED SOON!!!
    */
   subscribePendingTransactions: handleServerStreamingCall<PendingTxSubscriptionRequest, PendingTxNotification>;
+  /** RPC endpoint to subscribe to mempool based on a few filters */
+  subscribeMempool: handleServerStreamingCall<MempoolSubscription, PendingTxNotification>;
   sendBundle: handleUnaryCall<SendBundleRequest, SendBundleResponse>;
   /** Returns the next scheduled leader connected to the block engine. */
   getNextScheduledLeader: handleUnaryCall<NextScheduledLeaderRequest, NextScheduledLeaderResponse>;
@@ -941,6 +1150,7 @@ export interface SearcherServiceClient extends Client {
   /**
    * RPC endpoint to subscribe to pending transactions. Clients can provide a list of base58 encoded accounts.
    * Any transactions that write-lock the provided accounts will be streamed to the searcher.
+   * NOTE: DEPRECATED SOON!!!
    */
   subscribePendingTransactions(
     request: PendingTxSubscriptionRequest,
@@ -948,6 +1158,16 @@ export interface SearcherServiceClient extends Client {
   ): ClientReadableStream<PendingTxNotification>;
   subscribePendingTransactions(
     request: PendingTxSubscriptionRequest,
+    metadata?: Metadata,
+    options?: Partial<CallOptions>,
+  ): ClientReadableStream<PendingTxNotification>;
+  /** RPC endpoint to subscribe to mempool based on a few filters */
+  subscribeMempool(
+    request: MempoolSubscription,
+    options?: Partial<CallOptions>,
+  ): ClientReadableStream<PendingTxNotification>;
+  subscribeMempool(
+    request: MempoolSubscription,
     metadata?: Metadata,
     options?: Partial<CallOptions>,
   ): ClientReadableStream<PendingTxNotification>;
