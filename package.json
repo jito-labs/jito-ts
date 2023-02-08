@@ -3,6 +3,9 @@
   "license": "Apache-2.0",
   "name": "jito-ts",
   "version": "0.1.0",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "prepublish": "tsc",
   "dependencies": {
     "@grpc/grpc-js": "^1.8.7",
     "@noble/ed25519": "^1.7.1",
