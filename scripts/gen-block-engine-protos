@@ -7,7 +7,7 @@ PROTOS_PATH=$1
 
 
 # Directory to write generated code to
-OUT_DIR="./src/gen"
+OUT_DIR="./src/gen/block-engine"
 
 protoc \
   --plugin=${PROTOC_GEN_TS_PATH} \

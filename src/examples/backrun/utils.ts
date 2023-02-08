@@ -6,15 +6,15 @@ import {
   TransactionInstruction,
 } from '@solana/web3.js';
 
-import {SearcherClient} from '../../sdk/searcher';
-import {Bundle} from '../../sdk/types';
-import {isError} from '../../sdk/utils';
+import {SearcherClient} from '../../sdk/block-engine/searcher';
+import {Bundle} from '../../sdk/block-engine/types';
+import {isError} from '../../sdk/block-engine/utils';
 
 const MEMO_PROGRAM_ID = 'Memo1UhkJRfHyvLMcVucJwxXeuD728EqVDDwQDxFMNo';
 
 export const onPendingTransactions = async (
   c: SearcherClient,
-  accounts: string[],
+  accounts: PublicKey[],
   bundleTransactionLimit: number,
   keypair: Keypair,
   conn: Connection
@@ -63,7 +63,8 @@ export const onPendingTransactions = async (
           const resp = await c.sendBundle(b);
           console.log('resp:', resp);
         } catch (e) {
-          console.log('error:', e);
+          console.error('error:', e);
+          throw e;
         }
       });
     },

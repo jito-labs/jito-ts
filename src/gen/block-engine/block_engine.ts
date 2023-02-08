@@ -59,6 +59,13 @@ export interface AccountsOfInterestUpdate {
   accounts: string[];
 }
 
+export interface ProgramsOfInterestRequest {
+}
+
+export interface ProgramsOfInterestUpdate {
+  programs: string[];
+}
+
 /**
  * A series of packets with an expiration attached to them.
  * The header contains a timestamp for when this packet was generated.
@@ -552,6 +559,104 @@ export const AccountsOfInterestUpdate = {
   },
 };
 
+function createBaseProgramsOfInterestRequest(): ProgramsOfInterestRequest {
+  return {};
+}
+
+export const ProgramsOfInterestRequest = {
+  encode(_: ProgramsOfInterestRequest, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): ProgramsOfInterestRequest {
+    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseProgramsOfInterestRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        default:
+          reader.skipType(tag & 7);
+          break;
+      }
+    }
+    return message;
+  },
+
+  fromJSON(_: any): ProgramsOfInterestRequest {
+    return {};
+  },
+
+  toJSON(_: ProgramsOfInterestRequest): unknown {
+    const obj: any = {};
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<ProgramsOfInterestRequest>, I>>(base?: I): ProgramsOfInterestRequest {
+    return ProgramsOfInterestRequest.fromPartial(base ?? {});
+  },
+
+  fromPartial<I extends Exact<DeepPartial<ProgramsOfInterestRequest>, I>>(_: I): ProgramsOfInterestRequest {
+    const message = createBaseProgramsOfInterestRequest();
+    return message;
+  },
+};
+
+function createBaseProgramsOfInterestUpdate(): ProgramsOfInterestUpdate {
+  return { programs: [] };
+}
+
+export const ProgramsOfInterestUpdate = {
+  encode(message: ProgramsOfInterestUpdate, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    for (const v of message.programs) {
+      writer.uint32(10).string(v!);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): ProgramsOfInterestUpdate {
+    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseProgramsOfInterestUpdate();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          message.programs.push(reader.string());
+          break;
+        default:
+          reader.skipType(tag & 7);
+          break;
+      }
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ProgramsOfInterestUpdate {
+    return { programs: Array.isArray(object?.programs) ? object.programs.map((e: any) => String(e)) : [] };
+  },
+
+  toJSON(message: ProgramsOfInterestUpdate): unknown {
+    const obj: any = {};
+    if (message.programs) {
+      obj.programs = message.programs.map((e) => e);
+    } else {
+      obj.programs = [];
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<ProgramsOfInterestUpdate>, I>>(base?: I): ProgramsOfInterestUpdate {
+    return ProgramsOfInterestUpdate.fromPartial(base ?? {});
+  },
+
+  fromPartial<I extends Exact<DeepPartial<ProgramsOfInterestUpdate>, I>>(object: I): ProgramsOfInterestUpdate {
+    const message = createBaseProgramsOfInterestUpdate();
+    message.programs = object.programs?.map((e) => e) || [];
+    return message;
+  },
+};
+
 function createBaseExpiringPacketBatch(): ExpiringPacketBatch {
   return { header: undefined, batch: undefined, expiryMs: 0 };
 }
@@ -879,6 +984,17 @@ export const BlockEngineRelayerService = {
       Buffer.from(AccountsOfInterestUpdate.encode(value).finish()),
     responseDeserialize: (value: Buffer) => AccountsOfInterestUpdate.decode(value),
   },
+  subscribeProgramsOfInterest: {
+    path: "/block_engine.BlockEngineRelayer/SubscribeProgramsOfInterest",
+    requestStream: false,
+    responseStream: true,
+    requestSerialize: (value: ProgramsOfInterestRequest) =>
+      Buffer.from(ProgramsOfInterestRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer) => ProgramsOfInterestRequest.decode(value),
+    responseSerialize: (value: ProgramsOfInterestUpdate) =>
+      Buffer.from(ProgramsOfInterestUpdate.encode(value).finish()),
+    responseDeserialize: (value: Buffer) => ProgramsOfInterestUpdate.decode(value),
+  },
   /**
    * Validators can subscribe to packets from the relayer and receive a multiplexed signal that contains a mixture
    * of packets and heartbeats.
@@ -905,6 +1021,7 @@ export interface BlockEngineRelayerServer extends UntypedServiceImplementation {
    * / any of the accounts in the AOI.
    */
   subscribeAccountsOfInterest: handleServerStreamingCall<AccountsOfInterestRequest, AccountsOfInterestUpdate>;
+  subscribeProgramsOfInterest: handleServerStreamingCall<ProgramsOfInterestRequest, ProgramsOfInterestUpdate>;
   /**
    * Validators can subscribe to packets from the relayer and receive a multiplexed signal that contains a mixture
    * of packets and heartbeats.
@@ -930,6 +1047,15 @@ export interface BlockEngineRelayerClient extends Client {
     metadata?: Metadata,
     options?: Partial<CallOptions>,
   ): ClientReadableStream<AccountsOfInterestUpdate>;
+  subscribeProgramsOfInterest(
+    request: ProgramsOfInterestRequest,
+    options?: Partial<CallOptions>,
+  ): ClientReadableStream<ProgramsOfInterestUpdate>;
+  subscribeProgramsOfInterest(
+    request: ProgramsOfInterestRequest,
+    metadata?: Metadata,
+    options?: Partial<CallOptions>,
+  ): ClientReadableStream<ProgramsOfInterestUpdate>;
   /**
    * Validators can subscribe to packets from the relayer and receive a multiplexed signal that contains a mixture
    * of packets and heartbeats.

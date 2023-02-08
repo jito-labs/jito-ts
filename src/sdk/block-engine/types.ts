@@ -1,8 +1,8 @@
 import {Keypair, PublicKey, SystemProgram, Transaction} from '@solana/web3.js';
 
-import {Bundle as IBundle} from '../gen/bundle';
-import {Header} from '../gen/shared';
-import {Packet} from '../gen/packet';
+import {Bundle as IBundle} from '../../gen/block-engine/bundle';
+import {Header} from '../../gen/block-engine/shared';
+import {Packet} from '../../gen/block-engine/packet';
 import {serializeTransactions} from './utils';
 
 // Represents a bundle of transactions expected to execute all or nothing, atomically and sequentially.

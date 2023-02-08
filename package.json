@@ -24,7 +24,8 @@
     "typescript": "^4.9.4"
   },
   "scripts": {
-    "gen": "./scripts/generate-protos",
+    "gen-block-engine": "./scripts/gen-block-engine-protos",
+    "gen-geyser": "./scripts/gen-geyser-protos",
     "lint": "gts lint",
     "clean": "gts clean",
     "compile": "tsc",
@@ -32,6 +33,7 @@
     "prepare": "yarn run compile",
     "pretest": "yarn run compile",
     "posttest": "yarn run lint",
-    "run:backrun": "yarn tsc && node build/src/examples/backrun/index"
+    "run:backrun": "yarn tsc && node dist/examples/backrun/index",
+    "run:geyser": "yarn tsc && node dist/examples/geyser/index"
   }
 }
