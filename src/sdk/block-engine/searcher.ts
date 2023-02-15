@@ -12,7 +12,6 @@ import {
   GetTipAccountsResponse,
   NextScheduledLeaderResponse,
   PendingTxNotification,
-  PendingTxSubscriptionRequest,
   SearcherServiceClient,
   SendBundleRequest,
   SendBundleResponse,
@@ -111,8 +110,8 @@ export class SearcherClient {
     const stream: ClientReadableStream<PendingTxNotification> =
       this.client.subscribeMempool({
         programV0Sub: {
-          programs: programs.map(p => p.toString())
-        }
+          programs: programs.map(p => p.toString()),
+        },
       });
 
     stream.on('readable', () => {
@@ -125,22 +124,22 @@ export class SearcherClient {
 
   // Triggers the provided callback on updates to the provided accounts.
   onAccountUpdate(
-      accounts: PublicKey[],
-      successCallback: (transactions: Transaction[]) => void,
-      errorCallback: (e: Error) => void
+    accounts: PublicKey[],
+    successCallback: (transactions: Transaction[]) => void,
+    errorCallback: (e: Error) => void
   ) {
     const stream: ClientReadableStream<PendingTxNotification> =
-        this.client.subscribeMempool({
-          wlaV0Sub: {
-            accounts: accounts.map(a => a.toString())
-          }
-        });
+      this.client.subscribeMempool({
+        wlaV0Sub: {
+          accounts: accounts.map(a => a.toString()),
+        },
+      });
 
     stream.on('readable', () => {
       successCallback(deserializeTransactions(stream.read(1).transactions));
     });
     stream.on('error', e =>
-        errorCallback(new Error(`Stream error: ${e.message}`))
+      errorCallback(new Error(`Stream error: ${e.message}`))
     );
   }
 
