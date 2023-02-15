@@ -12,7 +12,7 @@ import {isError} from '../../sdk/block-engine/utils';
 
 const MEMO_PROGRAM_ID = 'Memo1UhkJRfHyvLMcVucJwxXeuD728EqVDDwQDxFMNo';
 
-export const onPendingTransactions = async (
+export const onAccountUpdates = async (
   c: SearcherClient,
   accounts: PublicKey[],
   bundleTransactionLimit: number,
@@ -22,7 +22,7 @@ export const onPendingTransactions = async (
   const _tipAccount = (await c.getTipAccounts())[0];
   console.log('tip account:', _tipAccount);
   const tipAccount = new PublicKey(_tipAccount);
-  c.onPendingTransactions(
+  c.onAccountUpdate(
     accounts,
     async (transactions: Transaction[]) => {
       console.log(`received ${transactions.length} transactions`);

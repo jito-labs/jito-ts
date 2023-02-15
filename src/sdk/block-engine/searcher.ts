@@ -102,22 +102,45 @@ export class SearcherClient {
     });
   }
 
-  // Accepts a list of accounts and filters transactions that write lock any of the accounts.
-  onPendingTransactions(
-    accounts: PublicKey[],
+  // Triggers the provided callback on account updates owned by the provided list of programs.
+  onProgramUpdate(
+    programs: PublicKey[],
     successCallback: (transactions: Transaction[]) => void,
     errorCallback: (e: Error) => void
   ) {
     const stream: ClientReadableStream<PendingTxNotification> =
-      this.client.subscribePendingTransactions({
-        accounts: accounts.map(a => a.toString()),
-      } as PendingTxSubscriptionRequest);
+      this.client.subscribeMempool({
+        programV0Sub: {
+          programs: programs.map(p => p.toString())
+        }
+      });
 
     stream.on('readable', () => {
       successCallback(deserializeTransactions(stream.read(1).transactions));
     });
     stream.on('error', e =>
       errorCallback(new Error(`Stream error: ${e.message}`))
+    );
+  }
+
+  // Triggers the provided callback on updates to the provided accounts.
+  onAccountUpdate(
+      accounts: PublicKey[],
+      successCallback: (transactions: Transaction[]) => void,
+      errorCallback: (e: Error) => void
+  ) {
+    const stream: ClientReadableStream<PendingTxNotification> =
+        this.client.subscribeMempool({
+          wlaV0Sub: {
+            accounts: accounts.map(a => a.toString())
+          }
+        });
+
+    stream.on('readable', () => {
+      successCallback(deserializeTransactions(stream.read(1).transactions));
+    });
+    stream.on('error', e =>
+        errorCallback(new Error(`Stream error: ${e.message}`))
     );
   }
 

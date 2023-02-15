@@ -4,7 +4,7 @@ import {Keypair, Connection, PublicKey} from '@solana/web3.js';
 import * as Fs from 'fs';
 
 import {searcherClient} from '../../sdk/block-engine/searcher';
-import {onBundleResult, onPendingTransactions} from './utils';
+import {onBundleResult, onAccountUpdates} from './utils';
 
 const main = async () => {
   const blockEngineUrl = process.env.BLOCK_ENGINE_URL || '';
@@ -31,7 +31,7 @@ const main = async () => {
   console.log('RPC_URL:', rpcUrl);
   const conn = new Connection(rpcUrl, 'confirmed');
 
-  await onPendingTransactions(
+  await onAccountUpdates(
     c,
     accounts,
     bundleTransactionLimit,
