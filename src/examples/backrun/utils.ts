@@ -63,8 +63,7 @@ export const onAccountUpdates = async (
           const resp = await c.sendBundle(b);
           console.log('resp:', resp);
         } catch (e) {
-          console.error('error:', e);
-          throw e;
+          console.error('error sending bundle:', e);
         }
       });
     },
