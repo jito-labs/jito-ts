@@ -47,7 +47,10 @@ export class GeyserClient {
       this.client.subscribeAccountUpdates({accounts});
 
     stream.on('readable', () => {
-      successCallback(stream.read(1));
+      const msg = stream.read(1);
+      if (msg) {
+        successCallback(msg);
+      }
     });
     stream.on('error', e =>
       errorCallback(new Error(`Stream error: ${e.message}`))
@@ -65,7 +68,10 @@ export class GeyserClient {
       this.client.subscribeProgramUpdates({programs});
 
     stream.on('readable', () => {
-      successCallback(stream.read(1));
+      const msg = stream.read(1);
+      if (msg) {
+        successCallback(msg);
+      }
     });
     stream.on('error', e =>
       errorCallback(new Error(`Stream error: ${e.message}`))
@@ -81,7 +87,10 @@ export class GeyserClient {
       this.client.subscribeBlockUpdates({});
 
     stream.on('readable', () => {
-      successCallback(stream.read(1));
+      const msg = stream.read(1);
+      if (msg) {
+        successCallback(msg);
+      }
     });
     stream.on('error', e =>
       errorCallback(new Error(`Stream error: ${e.message}`))

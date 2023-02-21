@@ -115,11 +115,14 @@ export class SearcherClient {
       });
 
     stream.on('readable', () => {
-      successCallback(deserializeTransactions(stream.read(1).transactions));
+      const msg = stream.read(1);
+      if (msg) {
+        successCallback(deserializeTransactions(msg.transactions));
+      }
     });
-    stream.on('error', e =>
-      errorCallback(new Error(`Stream error: ${e.message}`))
-    );
+    stream.on('error', e => {
+      errorCallback(new Error(`Stream error: ${e.message}`));
+    });
   }
 
   // Triggers the provided callback on updates to the provided accounts.
@@ -136,11 +139,14 @@ export class SearcherClient {
       });
 
     stream.on('readable', () => {
-      successCallback(deserializeTransactions(stream.read(1).transactions));
+      const msg = stream.read(1);
+      if (msg) {
+        successCallback(deserializeTransactions(msg.transactions));
+      }
     });
-    stream.on('error', e =>
-      errorCallback(new Error(`Stream error: ${e.message}`))
-    );
+    stream.on('error', e => {
+      errorCallback(new Error(`Stream error: ${e.message}`));
+    });
   }
 
   // Subscribes to bundle results.
@@ -152,11 +158,14 @@ export class SearcherClient {
       this.client.subscribeBundleResults({});
 
     stream.on('readable', () => {
-      successCallback(stream.read(1));
+      const msg = stream.read(1);
+      if (msg) {
+        successCallback(msg);
+      }
     });
-    stream.on('error', e =>
-      errorCallback(new Error(`Stream error: ${e.message}`))
-    );
+    stream.on('error', e => {
+      errorCallback(new Error(`Stream error: ${e.message}`));
+    });
   }
 }
 
