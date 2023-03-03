@@ -2,8 +2,9 @@ import {
   Connection,
   Keypair,
   PublicKey,
-  Transaction,
   TransactionInstruction,
+  TransactionMessage,
+  VersionedTransaction,
 } from '@solana/web3.js';
 
 import {SearcherClient} from '../../sdk/block-engine/searcher';
@@ -24,7 +25,7 @@ export const onAccountUpdates = async (
   const tipAccount = new PublicKey(_tipAccount);
   c.onAccountUpdate(
     accounts,
-    async (transactions: Transaction[]) => {
+    async (transactions: VersionedTransaction[]) => {
       console.log(`received ${transactions.length} transactions`);
 
       const resp = await conn.getLatestBlockhash('processed');
@@ -33,22 +34,17 @@ export const onAccountUpdates = async (
         const b = new Bundle([tx], bundleTransactionLimit);
 
         let maybeBundle = b.addSignedTransactions(
-          buildMemoTransaction(
-            keypair,
-            resp.blockhash,
-            resp.lastValidBlockHeight
-          )
+          buildMemoTransaction(keypair, resp.blockhash)
         );
         if (isError(maybeBundle)) {
           throw maybeBundle;
         }
 
-        maybeBundle = maybeBundle.attachTip(
+        maybeBundle = maybeBundle.addTipTx(
           keypair,
           100_000_000,
           tipAccount,
-          resp.blockhash,
-          resp.lastValidBlockHeight
+          resp.blockhash
         );
 
         if (isError(maybeBundle)) {
@@ -86,9 +82,8 @@ export const onBundleResult = (c: SearcherClient) => {
 
 const buildMemoTransaction = (
   keypair: Keypair,
-  recentBlockhash: string,
-  lastValidBlockHeight: number
-): Transaction => {
+  recentBlockhash: string
+): VersionedTransaction => {
   const ix = new TransactionInstruction({
     keys: [
       {
@@ -101,15 +96,17 @@ const buildMemoTransaction = (
     data: Buffer.from('Jito Backrun'),
   });
 
-  const tx = new Transaction();
-  tx.recentBlockhash = recentBlockhash;
-  tx.lastValidBlockHeight = lastValidBlockHeight;
+  const instructions = [ix];
 
-  tx.add(ix);
-  tx.sign({
-    publicKey: keypair.publicKey,
-    secretKey: keypair.secretKey,
-  });
+  const messageV0 = new TransactionMessage({
+    payerKey: keypair.publicKey,
+    recentBlockhash: recentBlockhash,
+    instructions,
+  }).compileToV0Message();
+
+  const tx = new VersionedTransaction(messageV0);
+
+  tx.sign([keypair]);
 
   return tx;
 };
