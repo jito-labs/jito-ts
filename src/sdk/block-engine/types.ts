@@ -25,22 +25,17 @@ export class Bundle implements IBundle {
     this.packets = serializeTransactions(txs);
   }
 
-  // Adds signed transactions to the bundle. Filters out any txs failing signature verification.
-  addSignedTransactions(
-    ...signedTransactions: VersionedTransaction[]
-  ): Bundle | Error {
-    const numTransactions =
-      this.transactions.length + signedTransactions.length;
+  // Adds transactions to the bundle.
+  addTransactions(...transactions: VersionedTransaction[]): Bundle | Error {
+    const numTransactions = this.transactions.length + transactions.length;
     if (numTransactions > this.transactionLimit) {
       return new Error(
         `${numTransactions} exceeds transaction limit of ${this.transactionLimit}`
       );
     }
 
-    this.transactions.push(...signedTransactions);
-    this.packets = this.packets.concat(
-      serializeTransactions(signedTransactions)
-    );
+    this.transactions.push(...transactions);
+    this.packets = this.packets.concat(serializeTransactions(transactions));
 
     return this;
   }

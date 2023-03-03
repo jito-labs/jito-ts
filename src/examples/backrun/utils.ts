@@ -33,7 +33,7 @@ export const onAccountUpdates = async (
       const bundles = transactions.map(tx => {
         const b = new Bundle([tx], bundleTransactionLimit);
 
-        let maybeBundle = b.addSignedTransactions(
+        let maybeBundle = b.addTransactions(
           buildMemoTransaction(keypair, resp.blockhash)
         );
         if (isError(maybeBundle)) {
