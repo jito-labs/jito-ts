@@ -125,6 +125,35 @@ export class SearcherClient {
     });
   }
 
+  // Yields on account updates owned by the provided list of programs.
+  async *programUpdates(
+    programs: PublicKey[],
+    onError: (e: Error) => void
+  ): AsyncGenerator<VersionedTransaction[]> {
+    const stream: ClientReadableStream<PendingTxNotification> =
+      this.client.subscribeMempool({
+        programV0Sub: {
+          programs: programs.map(p => p.toString()),
+        },
+      });
+
+    stream.on('error', e => {
+      onError(e);
+    });
+
+    for await (const pendingTxNotification of stream) {
+      try {
+        yield deserializeTransactions(pendingTxNotification.transactions);
+      } catch (e) {
+        if (e instanceof Error) {
+          onError(e);
+        } else {
+          onError(new Error('Deserialization error'));
+        }
+      }
+    }
+  }
+
   // Triggers the provided callback on updates to the provided accounts.
   onAccountUpdate(
     accounts: PublicKey[],
@@ -149,6 +178,35 @@ export class SearcherClient {
     });
   }
 
+  // Yields on updates to the provided accounts.
+  async *accountUpdates(
+    accounts: PublicKey[],
+    onError: (e: Error) => void
+  ): AsyncGenerator<VersionedTransaction[]> {
+    const stream: ClientReadableStream<PendingTxNotification> =
+      this.client.subscribeMempool({
+        wlaV0Sub: {
+          accounts: accounts.map(a => a.toString()),
+        },
+      });
+
+    stream.on('error', e => {
+      onError(e);
+    });
+
+    for await (const pendingTxNotification of stream) {
+      try {
+        yield deserializeTransactions(pendingTxNotification.transactions);
+      } catch (e) {
+        if (e instanceof Error) {
+          onError(e);
+        } else {
+          onError(new Error('Deserialization error'));
+        }
+      }
+    }
+  }
+
   // Subscribes to bundle results.
   onBundleResult(
     successCallback: (bundleResult: BundleResult) => void,
@@ -166,6 +224,30 @@ export class SearcherClient {
     stream.on('error', e => {
       errorCallback(new Error(`Stream error: ${e.message}`));
     });
+  }
+
+  // Yields on updates to the provided accounts.
+  async *bundleResults(
+    onError: (e: Error) => void
+  ): AsyncGenerator<BundleResult> {
+    const stream: ClientReadableStream<BundleResult> =
+      this.client.subscribeBundleResults({});
+
+    stream.on('error', e => {
+      onError(e);
+    });
+
+    for await (const bundleResult of stream) {
+      try {
+        yield bundleResult;
+      } catch (e) {
+        if (e instanceof Error) {
+          onError(e);
+        } else {
+          onError(new Error('Deserialization error'));
+        }
+      }
+    }
   }
 }
 
