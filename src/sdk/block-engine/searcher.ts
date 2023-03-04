@@ -226,7 +226,7 @@ export class SearcherClient {
     });
   }
 
-  // Yields on updates to the provided accounts.
+  // Yields on bundle results.
   async *bundleResults(
     onError: (e: Error) => void
   ): AsyncGenerator<BundleResult> {
