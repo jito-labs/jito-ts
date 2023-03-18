@@ -79,9 +79,7 @@ export type SimulatedBundleTransactionResult = {
 export type BundleError = {} | string;
 
 export type BundleSimulationSummary =
-  | {
-      succeeded: null;
-    }
+  | 'succeeded'
   | {
       failed: {
         error: BundleError;
@@ -148,9 +146,7 @@ const SimulatedBundleResponseStruct = jsonRpcResultAndContext(
           tx_signature: string(),
         }),
       }),
-      pick({
-        succeeded: literal(null),
-      }),
+      literal('succeeded'),
     ]),
     transactionResults: array(
       pick({
