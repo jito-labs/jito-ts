@@ -145,7 +145,7 @@ const SimulatedBundleResponseStruct = jsonRpcResultAndContext(
       pick({
         failed: pick({
           error: union([pick({}), string()]),
-          txSignature: string(),
+          tx_signature: string(),
         }),
       }),
       pick({
