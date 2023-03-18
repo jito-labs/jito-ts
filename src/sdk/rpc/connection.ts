@@ -85,7 +85,7 @@ export type BundleSimulationSummary =
   | {
       failed: {
         error: BundleError;
-        txSignature: string;
+        tx_signature: string;
       };
     };
 
