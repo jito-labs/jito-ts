@@ -11,7 +11,7 @@ import {
   ServiceError,
   UntypedServiceImplementation,
 } from "@grpc/grpc-js";
-import * as _m0 from "protobufjs/minimal";
+import _m0 from "protobufjs/minimal";
 import { Timestamp } from "./google/protobuf/timestamp";
 
 export const protobufPackage = "auth";
