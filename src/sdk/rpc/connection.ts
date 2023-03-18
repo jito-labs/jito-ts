@@ -207,14 +207,16 @@ function createRpcClient(
   const fetch = customFetch ? customFetch : fetchImpl;
   let agent: NodeHttpAgent | NodeHttpsAgent | undefined;
   if (process.env.BROWSER) {
-    if (httpAgent !== null) {
+    // eslint-disable-next-line eqeqeq
+    if (httpAgent != null) {
       console.warn(
         'You have supplied an `httpAgent` when creating a `Connection` in a browser environment.' +
           'It has been ignored; `httpAgent` is only used in Node environments.'
       );
     }
   } else {
-    if (httpAgent === null) {
+    // eslint-disable-next-line eqeqeq
+    if (httpAgent == null) {
       if (process.env.NODE_ENV !== 'test') {
         const agentOptions = {
           // One second fewer than the Solana RPC's keepalive timeout.
