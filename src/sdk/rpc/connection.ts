@@ -408,7 +408,7 @@ export class JitoRpcConnection extends Connection {
 
     const simulationConfig: any = config || {};
     simulationConfig.transactionEncoding = 'base64';
-    const args = [encodedTransactions, simulationConfig];
+    const args = [{encodedTransactions}, simulationConfig];
     const unsafeRes = await this._rpcRequest('simulateBundle', args);
     const res = create(unsafeRes, SimulatedBundleResponseStruct);
 
