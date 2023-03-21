@@ -1,4 +1,4 @@
-import {Keypair, PublicKey, Transaction} from '@solana/web3.js';
+import {Keypair, PublicKey, VersionedTransaction} from '@solana/web3.js';
 import {
   ChannelCredentials,
   ClientReadableStream,
@@ -104,7 +104,7 @@ export class SearcherClient {
   // Triggers the provided callback on account updates owned by the provided list of programs.
   onProgramUpdate(
     programs: PublicKey[],
-    successCallback: (transactions: Transaction[]) => void,
+    successCallback: (transactions: VersionedTransaction[]) => void,
     errorCallback: (e: Error) => void
   ) {
     const stream: ClientReadableStream<PendingTxNotification> =
@@ -128,7 +128,7 @@ export class SearcherClient {
   // Triggers the provided callback on updates to the provided accounts.
   onAccountUpdate(
     accounts: PublicKey[],
-    successCallback: (transactions: Transaction[]) => void,
+    successCallback: (transactions: VersionedTransaction[]) => void,
     errorCallback: (e: Error) => void
   ) {
     const stream: ClientReadableStream<PendingTxNotification> =
