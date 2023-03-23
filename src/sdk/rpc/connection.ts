@@ -404,7 +404,7 @@ export class JitoRpcConnection extends Connection {
   }
 
   /**
-   * Simulate a transaction
+   * Simulate a bundle
    */
   async simulateBundle(
     bundle: VersionedTransaction[],
