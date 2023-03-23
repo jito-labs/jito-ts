@@ -57,7 +57,7 @@ export type SimulateBundleConfig = {
     encoding: 'base64';
     addresses: string[];
   } | null)[];
-  /** list of accounts to return the pre transaction execution state for. The length of the array must be equal to the number transactions in the bundle */
+  /** list of accounts to return the post transaction execution state for. The length of the array must be equal to the number transactions in the bundle */
   postExecutionAccountsConfigs: ({
     encoding: 'base64';
     addresses: string[];
