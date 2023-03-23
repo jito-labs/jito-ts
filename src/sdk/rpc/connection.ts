@@ -62,7 +62,7 @@ export type SimulateBundleConfig = {
     encoding: 'base64';
     addresses: string[];
   } | null)[];
-  /** Optional parameter to specifuy the bank to run simulation against */
+  /** Optional parameter to specify the bank to run simulation against */
   simulationBank?: SimulationSlotConfig;
   /** Optional parameter used to enable signature verification before simulation */
   skipSigVerify?: boolean;
