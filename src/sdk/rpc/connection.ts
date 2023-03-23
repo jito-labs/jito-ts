@@ -340,6 +340,16 @@ function createRpcRequest(client: RpcClient): RpcRequest {
   };
 }
 
+/**
+ * The JitoRpcConnection class extends the Connection class from @solana/web3.js
+ * to provide an additional method called 'simulateBundle'.
+ *
+ * When constructing the JitoRpcConnection object, an httpAgent can be passed as
+ * part of the ConnectionConfig. If it is not provided, the constructor will
+ * internally create a separate httpAgent to be used for the 'simulateBundle' method.
+ * This means that if a httpAgent is not passed, a separate TCP connection will
+ * be used for 'simulateBundle'.
+ */
 export class JitoRpcConnection extends Connection {
   /** @internal */ _commitment?: Commitment;
   /** @internal */ _confirmTransactionInitialTimeout?: number;
