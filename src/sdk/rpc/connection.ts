@@ -1,3 +1,6 @@
+// most stuff copied from @solana/web3.js 1.74.0 - see direct references in the comment of each snippet
+// https://github.com/solana-labs/solana-web3.js/blob/3cd0cfd91a7fe08b9c67ac6f0d0c31c0c2ae8157/packages/library-legacy/src/connection.ts
+
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import {
   Commitment,
@@ -54,12 +57,12 @@ export type SimulateBundleConfig = {
     encoding: 'base64';
     addresses: string[];
   } | null)[];
-  /** list of accounts to return the pre transaction execution state for. The length of the array must be equal to the number transactions in the bundle */
+  /** list of accounts to return the post transaction execution state for. The length of the array must be equal to the number transactions in the bundle */
   postExecutionAccountsConfigs: ({
     encoding: 'base64';
     addresses: string[];
   } | null)[];
-  /** Optional parameter to specifuy the bank to run simulation against */
+  /** Optional parameter to specify the bank to run simulation against */
   simulationBank?: SimulationSlotConfig;
   /** Optional parameter used to enable signature verification before simulation */
   skipSigVerify?: boolean;
@@ -92,6 +95,7 @@ export type SimulatedBundleResponse = {
   transactionResults: SimulatedBundleTransactionResult[];
 };
 
+// https://github.com/solana-labs/solana-web3.js/blob/3cd0cfd91a7fe08b9c67ac6f0d0c31c0c2ae8157/packages/library-legacy/src/connection.ts#L387
 function createRpcResult<T, U>(result: Struct<T, U>) {
   return union([
     pick({
@@ -111,8 +115,10 @@ function createRpcResult<T, U>(result: Struct<T, U>) {
   ]);
 }
 
+// https://github.com/solana-labs/solana-web3.js/blob/3cd0cfd91a7fe08b9c67ac6f0d0c31c0c2ae8157/packages/library-legacy/src/connection.ts#L406
 const UnknownRpcResult = createRpcResult(unknown());
 
+// https://github.com/solana-labs/solana-web3.js/blob/3cd0cfd91a7fe08b9c67ac6f0d0c31c0c2ae8157/packages/library-legacy/src/connection.ts#L411
 function jsonRpcResult<T, U>(schema: Struct<T, U>) {
   return coerce(createRpcResult(schema), UnknownRpcResult, value => {
     if ('error' in value) {
@@ -126,6 +132,7 @@ function jsonRpcResult<T, U>(schema: Struct<T, U>) {
   });
 }
 
+// https://github.com/solana-labs/solana-web3.js/blob/3cd0cfd91a7fe08b9c67ac6f0d0c31c0c2ae8157/packages/library-legacy/src/connection.ts#L427
 function jsonRpcResultAndContext<T, U>(value: Struct<T, U>) {
   return jsonRpcResult(
     pick({
@@ -192,6 +199,7 @@ const SimulatedBundleResponseStruct = jsonRpcResultAndContext(
   })
 );
 
+// https://github.com/solana-labs/solana-web3.js/blob/3cd0cfd91a7fe08b9c67ac6f0d0c31c0c2ae8157/packages/library-legacy/src/connection.ts#L1489
 function createRpcClient(
   url: string,
   httpHeaders?: HttpHeaders,
@@ -324,8 +332,10 @@ function createRpcClient(
   return clientBrowser;
 }
 
+// https://github.com/solana-labs/solana-web3.js/blob/3cd0cfd91a7fe08b9c67ac6f0d0c31c0c2ae8157/packages/library-legacy/src/connection.ts#L210
 type RpcRequest = (methodName: string, args: Array<any>) => Promise<any>;
 
+// https://github.com/solana-labs/solana-web3.js/blob/3cd0cfd91a7fe08b9c67ac6f0d0c31c0c2ae8157/packages/library-legacy/src/connection.ts#L1620
 function createRpcRequest(client: RpcClient): RpcRequest {
   return (method, args) => {
     return new Promise((resolve, reject) => {
@@ -340,12 +350,24 @@ function createRpcRequest(client: RpcClient): RpcRequest {
   };
 }
 
+/**
+ * The JitoRpcConnection class extends the Connection class from @solana/web3.js
+ * to provide an additional method called 'simulateBundle'.
+ *
+ * When constructing the JitoRpcConnection object, an httpAgent can be passed as
+ * part of the ConnectionConfig. If it is not provided, the constructor will
+ * internally create a separate httpAgent to be used for the 'simulateBundle' method.
+ * This means that if a httpAgent is not passed, a separate TCP connection will
+ * be used for 'simulateBundle'.
+ */
 export class JitoRpcConnection extends Connection {
   /** @internal */ _commitment?: Commitment;
   /** @internal */ _confirmTransactionInitialTimeout?: number;
   /** @internal */ _rpcClient: RpcClient;
   /** @internal */ _rpcRequest: RpcRequest;
 
+  // copied from here but removed unused fields
+  // https://github.com/solana-labs/solana-web3.js/blob/3cd0cfd91a7fe08b9c67ac6f0d0c31c0c2ae8157/packages/library-legacy/src/connection.ts#L3060
   constructor(
     endpoint: string,
     commitmentOrConfig?: Commitment | ConnectionConfig
@@ -382,7 +404,7 @@ export class JitoRpcConnection extends Connection {
   }
 
   /**
-   * Simulate a transaction
+   * Simulate a bundle
    */
   async simulateBundle(
     bundle: VersionedTransaction[],

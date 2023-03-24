@@ -145,6 +145,7 @@ export class SearcherClient {
       try {
         yield deserializeTransactions(pendingTxNotification.transactions);
       } catch (e) {
+        console.log('Deserialization error: ', e);
         if (e instanceof Error) {
           onError(e);
         } else {
@@ -198,6 +199,7 @@ export class SearcherClient {
       try {
         yield deserializeTransactions(pendingTxNotification.transactions);
       } catch (e) {
+        console.log('Deserialization error: ', e);
         if (e instanceof Error) {
           onError(e);
         } else {
@@ -238,15 +240,7 @@ export class SearcherClient {
     });
 
     for await (const bundleResult of stream) {
-      try {
-        yield bundleResult;
-      } catch (e) {
-        if (e instanceof Error) {
-          onError(e);
-        } else {
-          onError(new Error('Deserialization error'));
-        }
-      }
+      yield bundleResult;
     }
   }
 }
