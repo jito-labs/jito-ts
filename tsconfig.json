@@ -5,7 +5,8 @@
     "noEmit": false,
     "rootDir": "src",
     "outDir": "dist",
-    "resolveJsonModule": false
+    "resolveJsonModule": false,
+    "esModuleInterop": true,
   },
   "include": [
     "src/**/*.ts",

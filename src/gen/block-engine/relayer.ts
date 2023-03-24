@@ -13,7 +13,7 @@ import {
   ServiceError,
   UntypedServiceImplementation,
 } from "@grpc/grpc-js";
-import * as _m0 from "protobufjs/minimal";
+import _m0 from "protobufjs/minimal";
 import { PacketBatch } from "./packet";
 import { Header, Heartbeat, Socket } from "./shared";
 
