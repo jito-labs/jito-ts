@@ -36,12 +36,15 @@ export class GeyserClient {
     });
   }
 
-  // Triggers the supplied callback on an update of the provided accounts of interest.
+  /*
+   * Triggers the supplied callback on an update of the provided accounts of interest.
+   * @returns a function that can be called to cancel the subscription.
+   */
   onAccountUpdate(
     accountsOfInterest: PublicKey[],
     successCallback: (resp: TimestampedAccountUpdate) => void,
     errorCallback: (e: Error) => void
-  ) {
+  ): () => void {
     const accounts = accountsOfInterest.map(a => a.toBytes());
     const stream: ClientReadableStream<TimestampedAccountUpdate> =
       this.client.subscribeAccountUpdates({accounts});
@@ -55,14 +58,18 @@ export class GeyserClient {
     stream.on('error', e =>
       errorCallback(new Error(`Stream error: ${e.message}`))
     );
+    return stream.destroy;
   }
 
-  // Triggers the supplied callback on an account update owned by the provided programs of interest.
+  /*
+   * Triggers the supplied callback on an account update owned by the provided programs of interest.
+   * @returns a function that can be called to cancel the subscription.
+   */
   onProgramUpdate(
     programsOfInterest: PublicKey[],
     successCallback: (resp: TimestampedAccountUpdate) => void,
     errorCallback: (e: Error) => void
-  ) {
+  ): () => void {
     const programs = programsOfInterest.map(a => a.toBytes());
     const stream: ClientReadableStream<TimestampedAccountUpdate> =
       this.client.subscribeProgramUpdates({programs});
@@ -76,13 +83,17 @@ export class GeyserClient {
     stream.on('error', e =>
       errorCallback(new Error(`Stream error: ${e.message}`))
     );
+    return stream.destroy;
   }
 
-  // Triggers the supplied callback for every processed block.
+  /*
+   * Triggers the supplied callback for every processed block.
+   * @returns a function that can be called to cancel the subscription.
+   */
   onProcessedBlock(
     successCallback: (resp: TimestampedBlockUpdate) => void,
     errorCallback: (e: Error) => void
-  ) {
+  ): () => void {
     const stream: ClientReadableStream<TimestampedBlockUpdate> =
       this.client.subscribeBlockUpdates({});
 
@@ -95,6 +106,7 @@ export class GeyserClient {
     stream.on('error', e =>
       errorCallback(new Error(`Stream error: ${e.message}`))
     );
+    return stream.destroy;
   }
 }
 
