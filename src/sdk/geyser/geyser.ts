@@ -58,7 +58,7 @@ export class GeyserClient {
     stream.on('error', e =>
       errorCallback(new Error(`Stream error: ${e.message}`))
     );
-    return stream.destroy;
+    return stream.cancel;
   }
 
   /*
@@ -83,7 +83,7 @@ export class GeyserClient {
     stream.on('error', e =>
       errorCallback(new Error(`Stream error: ${e.message}`))
     );
-    return stream.destroy;
+    return stream.cancel;
   }
 
   /*
@@ -106,7 +106,7 @@ export class GeyserClient {
     stream.on('error', e =>
       errorCallback(new Error(`Stream error: ${e.message}`))
     );
-    return stream.destroy;
+    return stream.cancel;
   }
 }
 
