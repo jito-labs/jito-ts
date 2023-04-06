@@ -28,8 +28,12 @@ export class SearcherClient {
     this.client = client;
   }
 
-  // Submits a bundle to the block-engine.
-  // Returns a promise yielding the bundle's uuid.
+  /**
+   * Submits a bundle to the block-engine.
+   *
+   * @param bundle - The Bundle object to be sent.
+   * @returns A Promise that resolves to the bundle's UUID (string) on successful submission.
+   */
   async sendBundle(bundle: Bundle): Promise<string> {
     return new Promise((resolve, reject) => {
       this.client.sendBundle(
@@ -47,6 +51,11 @@ export class SearcherClient {
     });
   }
 
+  /**
+   * Retrieves tip accounts from the server.
+   *
+   * @returns A Promise that resolves to an array of account strings (usually public keys).
+   */
   async getTipAccounts(): Promise<string[]> {
     return new Promise((resolve, reject) => {
       this.client.getTipAccounts(
@@ -62,8 +71,11 @@ export class SearcherClient {
     });
   }
 
-  // Returns a map of validator identity keys to their respective slot lists.
-  // These are validators connected to the block-engine.
+  /**
+   * Retrieves connected leaders (validators) from the server.
+   *
+   * @returns A Promise that resolves to a map, where keys are validator identity keys (usually public keys), and values are SlotList objects.
+   */
   async getConnectedLeaders(): Promise<{[key: string]: SlotList}> {
     return new Promise((resolve, reject) => {
       this.client.getConnectedLeaders(
@@ -79,11 +91,16 @@ export class SearcherClient {
     });
   }
 
-  // Returns the next scheduled leader connected to the block-engine.
+  /**
+   * Returns the next scheduled leader connected to the block-engine.
+   *
+   * @returns A Promise that resolves with an object containing:
+   *        - currentSlot: The current slot number the backend is on
+   *        - nextLeaderSlot: The slot number of the next scheduled leader
+   *        - nextLeaderIdentity: The identity of the next scheduled leader
+   */
   async getNextScheduledLeader(): Promise<{
-    /** the current slot the backend is on */
     currentSlot: number;
-    /** the slot and identity of the next leader */
     nextLeaderSlot: number;
     nextLeaderIdentity: string;
   }> {
@@ -101,12 +118,19 @@ export class SearcherClient {
     });
   }
 
-  // Triggers the provided callback on account updates owned by the provided list of programs.
+  /**
+   * Triggers the provided callback on account updates owned by the provided list of programs.
+   *
+   * @param programs - An array of program PublicKeys
+   * @param successCallback - A callback function that receives the updated transactions (VersionedTransaction[])
+   * @param errorCallback - A callback function that receives the stream error (Error)
+   * @returns A function to cancel the subscription
+   */
   onProgramUpdate(
     programs: PublicKey[],
     successCallback: (transactions: VersionedTransaction[]) => void,
     errorCallback: (e: Error) => void
-  ) {
+  ): () => void {
     const stream: ClientReadableStream<PendingTxNotification> =
       this.client.subscribeMempool({
         programV0Sub: {
@@ -123,9 +147,17 @@ export class SearcherClient {
     stream.on('error', e => {
       errorCallback(new Error(`Stream error: ${e.message}`));
     });
+
+    return stream.cancel;
   }
 
-  // Yields on account updates owned by the provided list of programs.
+  /**
+   * Yields on account updates owned by the provided list of programs.
+   *
+   * @param programs - An array of program PublicKeys
+   * @param onError - A callback function that receives the stream error (Error)
+   * @returns An async generator that yields transactions (VersionedTransaction[]) that use the provided programs
+   */
   async *programUpdates(
     programs: PublicKey[],
     onError: (e: Error) => void
@@ -155,12 +187,19 @@ export class SearcherClient {
     }
   }
 
-  // Triggers the provided callback on updates to the provided accounts.
+  /**
+   * Triggers the provided callback on updates to the provided accounts.
+   *
+   * @param accounts - An array of account PublicKeys
+   * @param successCallback - A callback function that receives the updated transactions (VersionedTransaction[])
+   * @param errorCallback - A callback function that receives the stream error (Error)
+   * @returns A function to cancel the subscription
+   */
   onAccountUpdate(
     accounts: PublicKey[],
     successCallback: (transactions: VersionedTransaction[]) => void,
     errorCallback: (e: Error) => void
-  ) {
+  ): () => void {
     const stream: ClientReadableStream<PendingTxNotification> =
       this.client.subscribeMempool({
         wlaV0Sub: {
@@ -177,9 +216,17 @@ export class SearcherClient {
     stream.on('error', e => {
       errorCallback(new Error(`Stream error: ${e.message}`));
     });
+
+    return stream.cancel;
   }
 
-  // Yields on updates to the provided accounts.
+  /**
+   * Yields on updates to the provided accounts.
+   *
+   * @param accounts - An array of account PublicKeys
+   * @param onError - A callback function that receives the stream error (Error)
+   * @returns An async generator that yields updated transactions (VersionedTransaction[]) on account updates
+   */
   async *accountUpdates(
     accounts: PublicKey[],
     onError: (e: Error) => void
@@ -209,11 +256,17 @@ export class SearcherClient {
     }
   }
 
-  // Subscribes to bundle results.
+  /**
+   * Triggers the provided callback on BundleResult updates.
+   *
+   * @param successCallback - A callback function that receives the BundleResult updates
+   * @param errorCallback - A callback function that receives the stream error (Error)
+   * @returns A function to cancel the subscription
+   */
   onBundleResult(
     successCallback: (bundleResult: BundleResult) => void,
     errorCallback: (e: Error) => void
-  ) {
+  ): () => void {
     const stream: ClientReadableStream<BundleResult> =
       this.client.subscribeBundleResults({});
 
@@ -226,9 +279,16 @@ export class SearcherClient {
     stream.on('error', e => {
       errorCallback(new Error(`Stream error: ${e.message}`));
     });
+
+    return stream.cancel;
   }
 
-  // Yields on bundle results.
+  /**
+   * Yields on bundle results.
+   *
+   * @param onError - A callback function that receives the stream error (Error)
+   * @returns An async generator that yields BundleResult updates
+   */
   async *bundleResults(
     onError: (e: Error) => void
   ): AsyncGenerator<BundleResult> {
@@ -245,6 +305,13 @@ export class SearcherClient {
   }
 }
 
+/**
+ * Creates and returns a SearcherClient instance.
+ *
+ * @param url - The URL of the SearcherService
+ * @param authKeypair - A Keypair for authentication
+ * @returns SearcherClient - An instance of the SearcherClient
+ */
 export const searcherClient = (
   url: string,
   authKeypair: Keypair

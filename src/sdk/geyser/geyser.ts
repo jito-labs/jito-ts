@@ -20,7 +20,11 @@ export class GeyserClient {
     this.client = client;
   }
 
-  // Returns the cadence at which to expect the Geyser server to send heartbeats.
+  /**
+   * Retrieves the heartbeat interval in milliseconds from the server.
+   *
+   * @returns A Promise that resolves to a number representing the heartbeat interval in milliseconds.
+   */
   async getHeartbeatIntervalMillis(): Promise<number> {
     return new Promise((resolve, reject) => {
       this.client.getHeartbeatInterval(
@@ -36,9 +40,13 @@ export class GeyserClient {
     });
   }
 
-  /*
+  /**
    * Triggers the supplied callback on an update of the provided accounts of interest.
-   * @returns a function that can be called to cancel the subscription.
+   *
+   * @param accountsOfInterest - An array of PublicKeys of the accounts to subscribe for updates.
+   * @param successCallback - A callback function that receives a TimestampedAccountUpdate object whenever updates are available.
+   * @param errorCallback - A callback function that is triggered whenever an error occurs during the subscription process.
+   * @returns A function that can be called to cancel the subscription.
    */
   onAccountUpdate(
     accountsOfInterest: PublicKey[],
@@ -55,15 +63,21 @@ export class GeyserClient {
         successCallback(msg);
       }
     });
+
     stream.on('error', e =>
       errorCallback(new Error(`Stream error: ${e.message}`))
     );
+
     return stream.cancel;
   }
 
-  /*
+  /**
    * Triggers the supplied callback on an account update owned by the provided programs of interest.
-   * @returns a function that can be called to cancel the subscription.
+   *
+   * @param programsOfInterest - An array of PublicKeys of the programs to subscribe for updates.
+   * @param successCallback - A callback function that receives a TimestampedAccountUpdate object whenever updates are available.
+   * @param errorCallback - A callback function that is triggered whenever an error occurs during the subscription process.
+   * @returns A function that can be called to cancel the subscription.
    */
   onProgramUpdate(
     programsOfInterest: PublicKey[],
@@ -80,15 +94,20 @@ export class GeyserClient {
         successCallback(msg);
       }
     });
+
     stream.on('error', e =>
       errorCallback(new Error(`Stream error: ${e.message}`))
     );
+
     return stream.cancel;
   }
 
-  /*
+  /**
    * Triggers the supplied callback for every processed block.
-   * @returns a function that can be called to cancel the subscription.
+   *
+   * @param successCallback - A callback function that receives a TimestampedBlockUpdate object whenever a block update is available.
+   * @param errorCallback - A callback function that is triggered whenever an error occurs during the subscription process.
+   * @returns A function that can be called to cancel the subscription.
    */
   onProcessedBlock(
     successCallback: (resp: TimestampedBlockUpdate) => void,
@@ -103,13 +122,22 @@ export class GeyserClient {
         successCallback(msg);
       }
     });
+
     stream.on('error', e =>
       errorCallback(new Error(`Stream error: ${e.message}`))
     );
+
     return stream.cancel;
   }
 }
 
+/**
+ * Creates and returns a new GeyserClient instance.
+ *
+ * @param url - The gRPC server endpoint URL.
+ * @param accessToken - The access token required for authentication.
+ * @returns A GeyserClient instance with the specified configuration.
+ */
 export const geyserClient = (
   url: string,
   accessToken: string
