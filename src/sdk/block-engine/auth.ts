@@ -70,7 +70,11 @@ export class AuthProvider {
   // Injects the current access token into the provided callback.
   // If it's expired then refreshes, if the refresh token is expired then runs the full auth flow.
   public injectAccessToken(callback: (accessToken: Jwt) => void) {
-    if (!this.accessToken) {
+    if (
+      !this.accessToken ||
+      !this.refreshToken ||
+      this.refreshToken.isExpired()
+    ) {
       this.fullAuth((accessToken: Jwt, refreshToken: Jwt) => {
         this.accessToken = accessToken;
         this.refreshToken = refreshToken;
