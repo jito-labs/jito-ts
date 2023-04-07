@@ -169,7 +169,7 @@ export class AuthProvider {
             }
 
             if (!AuthProvider.isValidToken(resp.accessToken)) {
-              throw `received invalid access token ${resp.refreshToken}`;
+              throw `received invalid access token ${resp.accessToken}`;
             }
             const accessToken = new Jwt(
               resp.accessToken?.value || '',
@@ -182,9 +182,9 @@ export class AuthProvider {
               throw `received invalid refresh token ${resp.refreshToken}`;
             }
             const refreshToken = new Jwt(
-              resp.accessToken?.value || '',
+              resp.refreshToken?.value || '',
               unixTimestampFromDate(
-                resp.accessToken?.expiresAtUtc || new Date()
+                resp.refreshToken?.expiresAtUtc || new Date()
               )
             );
 
