@@ -313,7 +313,7 @@ export class SearcherClient {
  * Creates and returns a SearcherClient instance.
  *
  * @param url - The URL of the SearcherService
- * @param authKeypair - A Keypair for authentication
+ * @param authKeypair - Keypair authorized for the block engine
  * @returns SearcherClient - An instance of the SearcherClient
  */
 export const searcherClient = (
