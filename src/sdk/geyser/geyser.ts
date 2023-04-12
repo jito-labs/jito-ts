@@ -1,5 +1,6 @@
 import {
   ChannelCredentials,
+  ChannelOptions,
   ClientReadableStream,
   ServiceError,
 } from '@grpc/grpc-js';
@@ -138,14 +139,17 @@ export class GeyserClient {
  *
  * @param url - The gRPC server endpoint URL.
  * @param accessToken - The access token required for authentication.
+ * @param grpcOptions - Optional configuration options for the gRPC client
  * @returns A GeyserClient instance with the specified configuration.
  */
 export const geyserClient = (
   url: string,
-  accessToken: string
+  accessToken: string,
+  grpcOptions?: Partial<ChannelOptions>
 ): GeyserClient => {
   const client = new GeyserClientStub(url, ChannelCredentials.createSsl(), {
     interceptors: [authInterceptor(accessToken)],
+    ...grpcOptions,
   });
 
   return new GeyserClient(client);

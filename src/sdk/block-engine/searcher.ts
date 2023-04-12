@@ -1,6 +1,8 @@
 import {Keypair, PublicKey, VersionedTransaction} from '@solana/web3.js';
 import {
   ChannelCredentials,
+  ChannelOptions,
+  ClientOptions,
   ClientReadableStream,
   ServiceError,
 } from '@grpc/grpc-js';
@@ -314,11 +316,13 @@ export class SearcherClient {
  *
  * @param url - The URL of the SearcherService
  * @param authKeypair - A Keypair for authentication
+ * @param grpcOptions - Optional configuration options for the gRPC client
  * @returns SearcherClient - An instance of the SearcherClient
  */
 export const searcherClient = (
   url: string,
-  authKeypair: Keypair
+  authKeypair: Keypair,
+  grpcOptions?: Partial<ChannelOptions>
 ): SearcherClient => {
   const authProvider = new AuthProvider(
     new AuthServiceClient(url, ChannelCredentials.createSsl()),
@@ -327,7 +331,7 @@ export const searcherClient = (
   const client = new SearcherServiceClient(
     url,
     ChannelCredentials.createSsl(),
-    {interceptors: [authInterceptor(authProvider)]}
+    {interceptors: [authInterceptor(authProvider)], ...grpcOptions}
   );
 
   return new SearcherClient(client);
