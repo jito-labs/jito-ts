@@ -24,6 +24,8 @@ export class GeyserClient {
    * Retrieves the heartbeat interval in milliseconds from the server.
    *
    * @returns A Promise that resolves to a number representing the heartbeat interval in milliseconds.
+   * @throws A ServiceError if there's an issue with the server while fetching the heartbeat interval.
+
    */
   async getHeartbeatIntervalMillis(): Promise<number> {
     return new Promise((resolve, reject) => {
