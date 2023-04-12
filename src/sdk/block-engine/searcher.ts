@@ -2,7 +2,6 @@ import {Keypair, PublicKey, VersionedTransaction} from '@solana/web3.js';
 import {
   ChannelCredentials,
   ChannelOptions,
-  ClientOptions,
   ClientReadableStream,
   ServiceError,
 } from '@grpc/grpc-js';
