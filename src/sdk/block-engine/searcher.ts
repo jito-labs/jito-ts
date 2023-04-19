@@ -33,6 +33,7 @@ export class SearcherClient {
    *
    * @param bundle - The Bundle object to be sent.
    * @returns A Promise that resolves to the bundle's UUID (string) on successful submission.
+   * @throws A ServiceError if there's an issue with the server while sending the bundle.
    */
   async sendBundle(bundle: Bundle): Promise<string> {
     return new Promise((resolve, reject) => {
@@ -55,6 +56,7 @@ export class SearcherClient {
    * Retrieves tip accounts from the server.
    *
    * @returns A Promise that resolves to an array of account strings (usually public keys).
+   * @throws A ServiceError if there's an issue with the server while fetching tip accounts.
    */
   async getTipAccounts(): Promise<string[]> {
     return new Promise((resolve, reject) => {
@@ -75,6 +77,7 @@ export class SearcherClient {
    * Retrieves connected leaders (validators) from the server.
    *
    * @returns A Promise that resolves to a map, where keys are validator identity keys (usually public keys), and values are SlotList objects.
+   * @throws A ServiceError if there's an issue with the server while fetching connected leaders.
    */
   async getConnectedLeaders(): Promise<{[key: string]: SlotList}> {
     return new Promise((resolve, reject) => {
@@ -98,6 +101,7 @@ export class SearcherClient {
    *        - currentSlot: The current slot number the backend is on
    *        - nextLeaderSlot: The slot number of the next scheduled leader
    *        - nextLeaderIdentity: The identity of the next scheduled leader
+   * @throws A ServiceError if there's an issue with the server while fetching the next scheduled leader.
    */
   async getNextScheduledLeader(): Promise<{
     currentSlot: number;
@@ -309,7 +313,7 @@ export class SearcherClient {
  * Creates and returns a SearcherClient instance.
  *
  * @param url - The URL of the SearcherService
- * @param authKeypair - A Keypair for authentication
+ * @param authKeypair - Keypair authorized for the block engine
  * @returns SearcherClient - An instance of the SearcherClient
  */
 export const searcherClient = (
