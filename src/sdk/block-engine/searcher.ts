@@ -314,7 +314,7 @@ export class SearcherClient {
  * Creates and returns a SearcherClient instance.
  *
  * @param url - The URL of the SearcherService
- * @param authKeypair - A Keypair for authentication
+ * @param authKeypair - Keypair authorized for the block engine
  * @param grpcOptions - Optional configuration options for the gRPC client
  * @returns SearcherClient - An instance of the SearcherClient
  */
