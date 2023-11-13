@@ -16,6 +16,7 @@ const MEMO_PROGRAM_ID = 'Memo1UhkJRfHyvLMcVucJwxXeuD728EqVDDwQDxFMNo';
 export const onAccountUpdates = async (
   c: SearcherClient,
   accounts: PublicKey[],
+  regions: string[],
   bundleTransactionLimit: number,
   keypair: Keypair,
   conn: Connection
@@ -25,6 +26,7 @@ export const onAccountUpdates = async (
   const tipAccount = new PublicKey(_tipAccount);
   c.onAccountUpdate(
     accounts,
+    regions,
     async (transactions: VersionedTransaction[]) => {
       console.log(`received ${transactions.length} transactions`);
 

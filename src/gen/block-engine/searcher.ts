@@ -35,16 +35,28 @@ export interface SendBundleResponse {
 }
 
 export interface ProgramSubscriptionV0 {
+  /** Base58 encoded program id that transactions mention */
   programs: string[];
 }
 
 export interface WriteLockedAccountSubscriptionV0 {
+  /** Base58 encoded account pubkey that transactions mention */
   accounts: string[];
 }
 
 export interface MempoolSubscription {
-  programV0Sub?: ProgramSubscriptionV0 | undefined;
-  wlaV0Sub?: WriteLockedAccountSubscriptionV0 | undefined;
+  programV0Sub?:
+    | ProgramSubscriptionV0
+    | undefined;
+  /** / field numbers upto (and incl) 9 are reserved */
+  wlaV0Sub?:
+    | WriteLockedAccountSubscriptionV0
+    | undefined;
+  /**
+   * Filters transactions to originate from specified regions.
+   * Defaults to the currently connected region.
+   */
+  regions: string[];
 }
 
 export interface PendingTxSubscriptionRequest {
@@ -101,6 +113,19 @@ export interface GetTipAccountsResponse {
 export interface SubscribeBundleResultsRequest {
 }
 
+export interface GetRegionsRequest {
+}
+
+export interface GetRegionsResponse {
+  /** The region the client is currently connected to */
+  currentRegion: string;
+  /**
+   * Regions that are online and ready for connections
+   * All regions: https://jito-labs.gitbook.io/mev/systems/connecting/mainnet
+   */
+  availableRegions: string[];
+}
+
 function createBaseSlotList(): SlotList {
   return { slots: [] };
 }
@@ -116,26 +141,34 @@ export const SlotList = {
   },
 
   decode(input: _m0.Reader | Uint8Array, length?: number): SlotList {
-    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
     let end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseSlotList();
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
         case 1:
-          if ((tag & 7) === 2) {
+          if (tag === 8) {
+            message.slots.push(longToNumber(reader.uint64() as Long));
+
+            continue;
+          }
+
+          if (tag === 10) {
             const end2 = reader.uint32() + reader.pos;
             while (reader.pos < end2) {
               message.slots.push(longToNumber(reader.uint64() as Long));
             }
-          } else {
-            message.slots.push(longToNumber(reader.uint64() as Long));
+
+            continue;
           }
-          break;
-        default:
-          reader.skipType(tag & 7);
+
           break;
       }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
     }
     return message;
   },
@@ -178,19 +211,24 @@ export const SendBundleRequest = {
   },
 
   decode(input: _m0.Reader | Uint8Array, length?: number): SendBundleRequest {
-    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
     let end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseSendBundleRequest();
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
         case 1:
+          if (tag !== 10) {
+            break;
+          }
+
           message.bundle = Bundle.decode(reader, reader.uint32());
-          break;
-        default:
-          reader.skipType(tag & 7);
-          break;
+          continue;
       }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
     }
     return message;
   },
@@ -231,19 +269,24 @@ export const SendBundleResponse = {
   },
 
   decode(input: _m0.Reader | Uint8Array, length?: number): SendBundleResponse {
-    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
     let end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseSendBundleResponse();
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
         case 1:
+          if (tag !== 10) {
+            break;
+          }
+
           message.uuid = reader.string();
-          break;
-        default:
-          reader.skipType(tag & 7);
-          break;
+          continue;
       }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
     }
     return message;
   },
@@ -282,19 +325,24 @@ export const ProgramSubscriptionV0 = {
   },
 
   decode(input: _m0.Reader | Uint8Array, length?: number): ProgramSubscriptionV0 {
-    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
     let end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseProgramSubscriptionV0();
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
         case 1:
+          if (tag !== 10) {
+            break;
+          }
+
           message.programs.push(reader.string());
-          break;
-        default:
-          reader.skipType(tag & 7);
-          break;
+          continue;
       }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
     }
     return message;
   },
@@ -337,19 +385,24 @@ export const WriteLockedAccountSubscriptionV0 = {
   },
 
   decode(input: _m0.Reader | Uint8Array, length?: number): WriteLockedAccountSubscriptionV0 {
-    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
     let end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseWriteLockedAccountSubscriptionV0();
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
         case 1:
+          if (tag !== 10) {
+            break;
+          }
+
           message.accounts.push(reader.string());
-          break;
-        default:
-          reader.skipType(tag & 7);
-          break;
+          continue;
       }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
     }
     return message;
   },
@@ -384,7 +437,7 @@ export const WriteLockedAccountSubscriptionV0 = {
 };
 
 function createBaseMempoolSubscription(): MempoolSubscription {
-  return { programV0Sub: undefined, wlaV0Sub: undefined };
+  return { programV0Sub: undefined, wlaV0Sub: undefined, regions: [] };
 }
 
 export const MempoolSubscription = {
@@ -395,26 +448,45 @@ export const MempoolSubscription = {
     if (message.wlaV0Sub !== undefined) {
       WriteLockedAccountSubscriptionV0.encode(message.wlaV0Sub, writer.uint32(18).fork()).ldelim();
     }
+    for (const v of message.regions) {
+      writer.uint32(82).string(v!);
+    }
     return writer;
   },
 
   decode(input: _m0.Reader | Uint8Array, length?: number): MempoolSubscription {
-    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
     let end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseMempoolSubscription();
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
         case 1:
+          if (tag !== 10) {
+            break;
+          }
+
           message.programV0Sub = ProgramSubscriptionV0.decode(reader, reader.uint32());
-          break;
+          continue;
         case 2:
+          if (tag !== 18) {
+            break;
+          }
+
           message.wlaV0Sub = WriteLockedAccountSubscriptionV0.decode(reader, reader.uint32());
-          break;
-        default:
-          reader.skipType(tag & 7);
-          break;
+          continue;
+        case 10:
+          if (tag !== 82) {
+            break;
+          }
+
+          message.regions.push(reader.string());
+          continue;
       }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
     }
     return message;
   },
@@ -423,6 +495,7 @@ export const MempoolSubscription = {
     return {
       programV0Sub: isSet(object.programV0Sub) ? ProgramSubscriptionV0.fromJSON(object.programV0Sub) : undefined,
       wlaV0Sub: isSet(object.wlaV0Sub) ? WriteLockedAccountSubscriptionV0.fromJSON(object.wlaV0Sub) : undefined,
+      regions: Array.isArray(object?.regions) ? object.regions.map((e: any) => String(e)) : [],
     };
   },
 
@@ -432,6 +505,11 @@ export const MempoolSubscription = {
       (obj.programV0Sub = message.programV0Sub ? ProgramSubscriptionV0.toJSON(message.programV0Sub) : undefined);
     message.wlaV0Sub !== undefined &&
       (obj.wlaV0Sub = message.wlaV0Sub ? WriteLockedAccountSubscriptionV0.toJSON(message.wlaV0Sub) : undefined);
+    if (message.regions) {
+      obj.regions = message.regions.map((e) => e);
+    } else {
+      obj.regions = [];
+    }
     return obj;
   },
 
@@ -447,6 +525,7 @@ export const MempoolSubscription = {
     message.wlaV0Sub = (object.wlaV0Sub !== undefined && object.wlaV0Sub !== null)
       ? WriteLockedAccountSubscriptionV0.fromPartial(object.wlaV0Sub)
       : undefined;
+    message.regions = object.regions?.map((e) => e) || [];
     return message;
   },
 };
@@ -464,19 +543,24 @@ export const PendingTxSubscriptionRequest = {
   },
 
   decode(input: _m0.Reader | Uint8Array, length?: number): PendingTxSubscriptionRequest {
-    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
     let end = length === undefined ? reader.len : reader.pos + length;
     const message = createBasePendingTxSubscriptionRequest();
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
         case 1:
+          if (tag !== 10) {
+            break;
+          }
+
           message.accounts.push(reader.string());
-          break;
-        default:
-          reader.skipType(tag & 7);
-          break;
+          continue;
       }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
     }
     return message;
   },
@@ -525,25 +609,38 @@ export const PendingTxNotification = {
   },
 
   decode(input: _m0.Reader | Uint8Array, length?: number): PendingTxNotification {
-    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
     let end = length === undefined ? reader.len : reader.pos + length;
     const message = createBasePendingTxNotification();
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
         case 1:
+          if (tag !== 10) {
+            break;
+          }
+
           message.serverSideTs = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
-          break;
+          continue;
         case 2:
+          if (tag !== 18) {
+            break;
+          }
+
           message.expirationTime = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
-          break;
+          continue;
         case 3:
+          if (tag !== 26) {
+            break;
+          }
+
           message.transactions.push(Packet.decode(reader, reader.uint32()));
-          break;
-        default:
-          reader.skipType(tag & 7);
-          break;
+          continue;
       }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
     }
     return message;
   },
@@ -591,16 +688,17 @@ export const NextScheduledLeaderRequest = {
   },
 
   decode(input: _m0.Reader | Uint8Array, length?: number): NextScheduledLeaderRequest {
-    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
     let end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseNextScheduledLeaderRequest();
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
-        default:
-          reader.skipType(tag & 7);
-          break;
       }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
     }
     return message;
   },
@@ -643,25 +741,38 @@ export const NextScheduledLeaderResponse = {
   },
 
   decode(input: _m0.Reader | Uint8Array, length?: number): NextScheduledLeaderResponse {
-    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
     let end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseNextScheduledLeaderResponse();
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
         case 1:
+          if (tag !== 8) {
+            break;
+          }
+
           message.currentSlot = longToNumber(reader.uint64() as Long);
-          break;
+          continue;
         case 2:
+          if (tag !== 16) {
+            break;
+          }
+
           message.nextLeaderSlot = longToNumber(reader.uint64() as Long);
-          break;
+          continue;
         case 3:
+          if (tag !== 26) {
+            break;
+          }
+
           message.nextLeaderIdentity = reader.string();
-          break;
-        default:
-          reader.skipType(tag & 7);
-          break;
+          continue;
       }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
     }
     return message;
   },
@@ -705,16 +816,17 @@ export const ConnectedLeadersRequest = {
   },
 
   decode(input: _m0.Reader | Uint8Array, length?: number): ConnectedLeadersRequest {
-    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
     let end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseConnectedLeadersRequest();
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
-        default:
-          reader.skipType(tag & 7);
-          break;
       }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
     }
     return message;
   },
@@ -752,22 +864,27 @@ export const ConnectedLeadersResponse = {
   },
 
   decode(input: _m0.Reader | Uint8Array, length?: number): ConnectedLeadersResponse {
-    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
     let end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseConnectedLeadersResponse();
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
         case 1:
+          if (tag !== 10) {
+            break;
+          }
+
           const entry1 = ConnectedLeadersResponse_ConnectedValidatorsEntry.decode(reader, reader.uint32());
           if (entry1.value !== undefined) {
             message.connectedValidators[entry1.key] = entry1.value;
           }
-          break;
-        default:
-          reader.skipType(tag & 7);
-          break;
+          continue;
       }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
     }
     return message;
   },
@@ -832,22 +949,31 @@ export const ConnectedLeadersResponse_ConnectedValidatorsEntry = {
   },
 
   decode(input: _m0.Reader | Uint8Array, length?: number): ConnectedLeadersResponse_ConnectedValidatorsEntry {
-    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
     let end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseConnectedLeadersResponse_ConnectedValidatorsEntry();
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
         case 1:
+          if (tag !== 10) {
+            break;
+          }
+
           message.key = reader.string();
-          break;
+          continue;
         case 2:
+          if (tag !== 18) {
+            break;
+          }
+
           message.value = SlotList.decode(reader, reader.uint32());
-          break;
-        default:
-          reader.skipType(tag & 7);
-          break;
+          continue;
       }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
     }
     return message;
   },
@@ -894,16 +1020,17 @@ export const GetTipAccountsRequest = {
   },
 
   decode(input: _m0.Reader | Uint8Array, length?: number): GetTipAccountsRequest {
-    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
     let end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseGetTipAccountsRequest();
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
-        default:
-          reader.skipType(tag & 7);
-          break;
       }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
     }
     return message;
   },
@@ -940,19 +1067,24 @@ export const GetTipAccountsResponse = {
   },
 
   decode(input: _m0.Reader | Uint8Array, length?: number): GetTipAccountsResponse {
-    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
     let end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseGetTipAccountsResponse();
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
         case 1:
+          if (tag !== 10) {
+            break;
+          }
+
           message.accounts.push(reader.string());
-          break;
-        default:
-          reader.skipType(tag & 7);
-          break;
+          continue;
       }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
     }
     return message;
   },
@@ -992,16 +1124,17 @@ export const SubscribeBundleResultsRequest = {
   },
 
   decode(input: _m0.Reader | Uint8Array, length?: number): SubscribeBundleResultsRequest {
-    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
     let end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseSubscribeBundleResultsRequest();
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
-        default:
-          reader.skipType(tag & 7);
-          break;
       }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
     }
     return message;
   },
@@ -1021,6 +1154,127 @@ export const SubscribeBundleResultsRequest = {
 
   fromPartial<I extends Exact<DeepPartial<SubscribeBundleResultsRequest>, I>>(_: I): SubscribeBundleResultsRequest {
     const message = createBaseSubscribeBundleResultsRequest();
+    return message;
+  },
+};
+
+function createBaseGetRegionsRequest(): GetRegionsRequest {
+  return {};
+}
+
+export const GetRegionsRequest = {
+  encode(_: GetRegionsRequest, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): GetRegionsRequest {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetRegionsRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(_: any): GetRegionsRequest {
+    return {};
+  },
+
+  toJSON(_: GetRegionsRequest): unknown {
+    const obj: any = {};
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<GetRegionsRequest>, I>>(base?: I): GetRegionsRequest {
+    return GetRegionsRequest.fromPartial(base ?? {});
+  },
+
+  fromPartial<I extends Exact<DeepPartial<GetRegionsRequest>, I>>(_: I): GetRegionsRequest {
+    const message = createBaseGetRegionsRequest();
+    return message;
+  },
+};
+
+function createBaseGetRegionsResponse(): GetRegionsResponse {
+  return { currentRegion: "", availableRegions: [] };
+}
+
+export const GetRegionsResponse = {
+  encode(message: GetRegionsResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.currentRegion !== "") {
+      writer.uint32(10).string(message.currentRegion);
+    }
+    for (const v of message.availableRegions) {
+      writer.uint32(18).string(v!);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): GetRegionsResponse {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetRegionsResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.currentRegion = reader.string();
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.availableRegions.push(reader.string());
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GetRegionsResponse {
+    return {
+      currentRegion: isSet(object.currentRegion) ? String(object.currentRegion) : "",
+      availableRegions: Array.isArray(object?.availableRegions)
+        ? object.availableRegions.map((e: any) => String(e))
+        : [],
+    };
+  },
+
+  toJSON(message: GetRegionsResponse): unknown {
+    const obj: any = {};
+    message.currentRegion !== undefined && (obj.currentRegion = message.currentRegion);
+    if (message.availableRegions) {
+      obj.availableRegions = message.availableRegions.map((e) => e);
+    } else {
+      obj.availableRegions = [];
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<GetRegionsResponse>, I>>(base?: I): GetRegionsResponse {
+    return GetRegionsResponse.fromPartial(base ?? {});
+  },
+
+  fromPartial<I extends Exact<DeepPartial<GetRegionsResponse>, I>>(object: I): GetRegionsResponse {
+    const message = createBaseGetRegionsResponse();
+    message.currentRegion = object.currentRegion ?? "";
+    message.availableRegions = object.availableRegions?.map((e) => e) || [];
     return message;
   },
 };
@@ -1108,6 +1362,16 @@ export const SearcherServiceService = {
     responseSerialize: (value: GetTipAccountsResponse) => Buffer.from(GetTipAccountsResponse.encode(value).finish()),
     responseDeserialize: (value: Buffer) => GetTipAccountsResponse.decode(value),
   },
+  /** Returns region the client is directly connected to, along with all available regions */
+  getRegions: {
+    path: "/searcher.SearcherService/GetRegions",
+    requestStream: false,
+    responseStream: false,
+    requestSerialize: (value: GetRegionsRequest) => Buffer.from(GetRegionsRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer) => GetRegionsRequest.decode(value),
+    responseSerialize: (value: GetRegionsResponse) => Buffer.from(GetRegionsResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer) => GetRegionsResponse.decode(value),
+  },
 } as const;
 
 export interface SearcherServiceServer extends UntypedServiceImplementation {
@@ -1131,6 +1395,8 @@ export interface SearcherServiceServer extends UntypedServiceImplementation {
   getConnectedLeaders: handleUnaryCall<ConnectedLeadersRequest, ConnectedLeadersResponse>;
   /** Returns the tip accounts searchers shall transfer funds to for the leader to claim. */
   getTipAccounts: handleUnaryCall<GetTipAccountsRequest, GetTipAccountsResponse>;
+  /** Returns region the client is directly connected to, along with all available regions */
+  getRegions: handleUnaryCall<GetRegionsRequest, GetRegionsResponse>;
 }
 
 export interface SearcherServiceClient extends Client {
@@ -1234,6 +1500,22 @@ export interface SearcherServiceClient extends Client {
     options: Partial<CallOptions>,
     callback: (error: ServiceError | null, response: GetTipAccountsResponse) => void,
   ): ClientUnaryCall;
+  /** Returns region the client is directly connected to, along with all available regions */
+  getRegions(
+    request: GetRegionsRequest,
+    callback: (error: ServiceError | null, response: GetRegionsResponse) => void,
+  ): ClientUnaryCall;
+  getRegions(
+    request: GetRegionsRequest,
+    metadata: Metadata,
+    callback: (error: ServiceError | null, response: GetRegionsResponse) => void,
+  ): ClientUnaryCall;
+  getRegions(
+    request: GetRegionsRequest,
+    metadata: Metadata,
+    options: Partial<CallOptions>,
+    callback: (error: ServiceError | null, response: GetRegionsResponse) => void,
+  ): ClientUnaryCall;
 }
 
 export const SearcherServiceClient = makeGenericClientConstructor(
@@ -1281,8 +1563,8 @@ function toTimestamp(date: Date): Timestamp {
 }
 
 function fromTimestamp(t: Timestamp): Date {
-  let millis = t.seconds * 1_000;
-  millis += t.nanos / 1_000_000;
+  let millis = (t.seconds || 0) * 1_000;
+  millis += (t.nanos || 0) / 1_000_000;
   return new Date(millis);
 }
 

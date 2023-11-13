@@ -6,6 +6,47 @@ import { Header } from "./shared";
 
 export const protobufPackage = "bundle";
 
+export enum DroppedReason {
+  BlockhashExpired = 0,
+  /** PartiallyProcessed - One or more transactions in the bundle landed on-chain, invalidating the bundle. */
+  PartiallyProcessed = 1,
+  /** NotFinalized - This indicates bundle was processed but not finalized. This could occur during forks. */
+  NotFinalized = 2,
+  UNRECOGNIZED = -1,
+}
+
+export function droppedReasonFromJSON(object: any): DroppedReason {
+  switch (object) {
+    case 0:
+    case "BlockhashExpired":
+      return DroppedReason.BlockhashExpired;
+    case 1:
+    case "PartiallyProcessed":
+      return DroppedReason.PartiallyProcessed;
+    case 2:
+    case "NotFinalized":
+      return DroppedReason.NotFinalized;
+    case -1:
+    case "UNRECOGNIZED":
+    default:
+      return DroppedReason.UNRECOGNIZED;
+  }
+}
+
+export function droppedReasonToJSON(object: DroppedReason): string {
+  switch (object) {
+    case DroppedReason.BlockhashExpired:
+      return "BlockhashExpired";
+    case DroppedReason.PartiallyProcessed:
+      return "PartiallyProcessed";
+    case DroppedReason.NotFinalized:
+      return "NotFinalized";
+    case DroppedReason.UNRECOGNIZED:
+    default:
+      return "UNRECOGNIZED";
+  }
+}
+
 export interface Bundle {
   header: Header | undefined;
   packets: Packet[];
@@ -74,11 +115,41 @@ export interface DroppedBundle {
   msg: string;
 }
 
+export interface Finalized {
+}
+
+export interface Processed {
+  validatorIdentity: string;
+  slot: number;
+  /** / Index within the block. */
+  bundleIndex: number;
+}
+
+export interface Dropped {
+  reason: DroppedReason;
+}
+
 export interface BundleResult {
   /** Bundle's Uuid. */
   bundleId: string;
-  accepted?: Accepted | undefined;
-  rejected?: Rejected | undefined;
+  /** Indicated accepted by the block-engine and forwarded to a jito-solana validator. */
+  accepted?:
+    | Accepted
+    | undefined;
+  /** Rejected by the block-engine. */
+  rejected?:
+    | Rejected
+    | undefined;
+  /** Reached finalized commitment level. */
+  finalized?:
+    | Finalized
+    | undefined;
+  /** Reached a processed commitment level. */
+  processed?:
+    | Processed
+    | undefined;
+  /** Was accepted and forwarded by the block-engine but never landed on-chain. */
+  dropped?: Dropped | undefined;
 }
 
 function createBaseBundle(): Bundle {
@@ -97,22 +168,31 @@ export const Bundle = {
   },
 
   decode(input: _m0.Reader | Uint8Array, length?: number): Bundle {
-    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
     let end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseBundle();
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
         case 2:
+          if (tag !== 18) {
+            break;
+          }
+
           message.header = Header.decode(reader, reader.uint32());
-          break;
+          continue;
         case 3:
+          if (tag !== 26) {
+            break;
+          }
+
           message.packets.push(Packet.decode(reader, reader.uint32()));
-          break;
-        default:
-          reader.skipType(tag & 7);
-          break;
+          continue;
       }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
     }
     return message;
   },
@@ -165,22 +245,31 @@ export const BundleUuid = {
   },
 
   decode(input: _m0.Reader | Uint8Array, length?: number): BundleUuid {
-    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
     let end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseBundleUuid();
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
         case 1:
+          if (tag !== 10) {
+            break;
+          }
+
           message.bundle = Bundle.decode(reader, reader.uint32());
-          break;
+          continue;
         case 2:
+          if (tag !== 18) {
+            break;
+          }
+
           message.uuid = reader.string();
-          break;
-        default:
-          reader.skipType(tag & 7);
-          break;
+          continue;
       }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
     }
     return message;
   },
@@ -229,22 +318,31 @@ export const Accepted = {
   },
 
   decode(input: _m0.Reader | Uint8Array, length?: number): Accepted {
-    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
     let end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseAccepted();
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
         case 1:
+          if (tag !== 8) {
+            break;
+          }
+
           message.slot = longToNumber(reader.uint64() as Long);
-          break;
+          continue;
         case 2:
+          if (tag !== 18) {
+            break;
+          }
+
           message.validatorIdentity = reader.string();
-          break;
-        default:
-          reader.skipType(tag & 7);
-          break;
+          continue;
       }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
     }
     return message;
   },
@@ -306,31 +404,52 @@ export const Rejected = {
   },
 
   decode(input: _m0.Reader | Uint8Array, length?: number): Rejected {
-    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
     let end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseRejected();
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
         case 1:
+          if (tag !== 10) {
+            break;
+          }
+
           message.stateAuctionBidRejected = StateAuctionBidRejected.decode(reader, reader.uint32());
-          break;
+          continue;
         case 2:
+          if (tag !== 18) {
+            break;
+          }
+
           message.winningBatchBidRejected = WinningBatchBidRejected.decode(reader, reader.uint32());
-          break;
+          continue;
         case 3:
+          if (tag !== 26) {
+            break;
+          }
+
           message.simulationFailure = SimulationFailure.decode(reader, reader.uint32());
-          break;
+          continue;
         case 4:
+          if (tag !== 34) {
+            break;
+          }
+
           message.internalError = InternalError.decode(reader, reader.uint32());
-          break;
+          continue;
         case 5:
+          if (tag !== 42) {
+            break;
+          }
+
           message.droppedBundle = DroppedBundle.decode(reader, reader.uint32());
-          break;
-        default:
-          reader.skipType(tag & 7);
-          break;
+          continue;
       }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
     }
     return message;
   },
@@ -415,25 +534,38 @@ export const WinningBatchBidRejected = {
   },
 
   decode(input: _m0.Reader | Uint8Array, length?: number): WinningBatchBidRejected {
-    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
     let end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseWinningBatchBidRejected();
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
         case 1:
+          if (tag !== 10) {
+            break;
+          }
+
           message.auctionId = reader.string();
-          break;
+          continue;
         case 2:
+          if (tag !== 16) {
+            break;
+          }
+
           message.simulatedBidLamports = longToNumber(reader.uint64() as Long);
-          break;
+          continue;
         case 3:
+          if (tag !== 26) {
+            break;
+          }
+
           message.msg = reader.string();
-          break;
-        default:
-          reader.skipType(tag & 7);
-          break;
+          continue;
       }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
     }
     return message;
   },
@@ -486,25 +618,38 @@ export const StateAuctionBidRejected = {
   },
 
   decode(input: _m0.Reader | Uint8Array, length?: number): StateAuctionBidRejected {
-    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
     let end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseStateAuctionBidRejected();
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
         case 1:
+          if (tag !== 10) {
+            break;
+          }
+
           message.auctionId = reader.string();
-          break;
+          continue;
         case 2:
+          if (tag !== 16) {
+            break;
+          }
+
           message.simulatedBidLamports = longToNumber(reader.uint64() as Long);
-          break;
+          continue;
         case 3:
+          if (tag !== 26) {
+            break;
+          }
+
           message.msg = reader.string();
-          break;
-        default:
-          reader.skipType(tag & 7);
-          break;
+          continue;
       }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
     }
     return message;
   },
@@ -554,22 +699,31 @@ export const SimulationFailure = {
   },
 
   decode(input: _m0.Reader | Uint8Array, length?: number): SimulationFailure {
-    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
     let end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseSimulationFailure();
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
         case 1:
+          if (tag !== 10) {
+            break;
+          }
+
           message.txSignature = reader.string();
-          break;
+          continue;
         case 2:
+          if (tag !== 18) {
+            break;
+          }
+
           message.msg = reader.string();
-          break;
-        default:
-          reader.skipType(tag & 7);
-          break;
+          continue;
       }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
     }
     return message;
   },
@@ -613,19 +767,24 @@ export const InternalError = {
   },
 
   decode(input: _m0.Reader | Uint8Array, length?: number): InternalError {
-    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
     let end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseInternalError();
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
         case 1:
+          if (tag !== 10) {
+            break;
+          }
+
           message.msg = reader.string();
-          break;
-        default:
-          reader.skipType(tag & 7);
-          break;
+          continue;
       }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
     }
     return message;
   },
@@ -664,19 +823,24 @@ export const DroppedBundle = {
   },
 
   decode(input: _m0.Reader | Uint8Array, length?: number): DroppedBundle {
-    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
     let end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseDroppedBundle();
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
         case 1:
+          if (tag !== 10) {
+            break;
+          }
+
           message.msg = reader.string();
-          break;
-        default:
-          reader.skipType(tag & 7);
-          break;
+          continue;
       }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
     }
     return message;
   },
@@ -702,8 +866,199 @@ export const DroppedBundle = {
   },
 };
 
+function createBaseFinalized(): Finalized {
+  return {};
+}
+
+export const Finalized = {
+  encode(_: Finalized, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): Finalized {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseFinalized();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(_: any): Finalized {
+    return {};
+  },
+
+  toJSON(_: Finalized): unknown {
+    const obj: any = {};
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<Finalized>, I>>(base?: I): Finalized {
+    return Finalized.fromPartial(base ?? {});
+  },
+
+  fromPartial<I extends Exact<DeepPartial<Finalized>, I>>(_: I): Finalized {
+    const message = createBaseFinalized();
+    return message;
+  },
+};
+
+function createBaseProcessed(): Processed {
+  return { validatorIdentity: "", slot: 0, bundleIndex: 0 };
+}
+
+export const Processed = {
+  encode(message: Processed, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.validatorIdentity !== "") {
+      writer.uint32(10).string(message.validatorIdentity);
+    }
+    if (message.slot !== 0) {
+      writer.uint32(16).uint64(message.slot);
+    }
+    if (message.bundleIndex !== 0) {
+      writer.uint32(24).uint64(message.bundleIndex);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): Processed {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseProcessed();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.validatorIdentity = reader.string();
+          continue;
+        case 2:
+          if (tag !== 16) {
+            break;
+          }
+
+          message.slot = longToNumber(reader.uint64() as Long);
+          continue;
+        case 3:
+          if (tag !== 24) {
+            break;
+          }
+
+          message.bundleIndex = longToNumber(reader.uint64() as Long);
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): Processed {
+    return {
+      validatorIdentity: isSet(object.validatorIdentity) ? String(object.validatorIdentity) : "",
+      slot: isSet(object.slot) ? Number(object.slot) : 0,
+      bundleIndex: isSet(object.bundleIndex) ? Number(object.bundleIndex) : 0,
+    };
+  },
+
+  toJSON(message: Processed): unknown {
+    const obj: any = {};
+    message.validatorIdentity !== undefined && (obj.validatorIdentity = message.validatorIdentity);
+    message.slot !== undefined && (obj.slot = Math.round(message.slot));
+    message.bundleIndex !== undefined && (obj.bundleIndex = Math.round(message.bundleIndex));
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<Processed>, I>>(base?: I): Processed {
+    return Processed.fromPartial(base ?? {});
+  },
+
+  fromPartial<I extends Exact<DeepPartial<Processed>, I>>(object: I): Processed {
+    const message = createBaseProcessed();
+    message.validatorIdentity = object.validatorIdentity ?? "";
+    message.slot = object.slot ?? 0;
+    message.bundleIndex = object.bundleIndex ?? 0;
+    return message;
+  },
+};
+
+function createBaseDropped(): Dropped {
+  return { reason: 0 };
+}
+
+export const Dropped = {
+  encode(message: Dropped, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.reason !== 0) {
+      writer.uint32(8).int32(message.reason);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): Dropped {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseDropped();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 8) {
+            break;
+          }
+
+          message.reason = reader.int32() as any;
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): Dropped {
+    return { reason: isSet(object.reason) ? droppedReasonFromJSON(object.reason) : 0 };
+  },
+
+  toJSON(message: Dropped): unknown {
+    const obj: any = {};
+    message.reason !== undefined && (obj.reason = droppedReasonToJSON(message.reason));
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<Dropped>, I>>(base?: I): Dropped {
+    return Dropped.fromPartial(base ?? {});
+  },
+
+  fromPartial<I extends Exact<DeepPartial<Dropped>, I>>(object: I): Dropped {
+    const message = createBaseDropped();
+    message.reason = object.reason ?? 0;
+    return message;
+  },
+};
+
 function createBaseBundleResult(): BundleResult {
-  return { bundleId: "", accepted: undefined, rejected: undefined };
+  return {
+    bundleId: "",
+    accepted: undefined,
+    rejected: undefined,
+    finalized: undefined,
+    processed: undefined,
+    dropped: undefined,
+  };
 }
 
 export const BundleResult = {
@@ -717,29 +1072,72 @@ export const BundleResult = {
     if (message.rejected !== undefined) {
       Rejected.encode(message.rejected, writer.uint32(26).fork()).ldelim();
     }
+    if (message.finalized !== undefined) {
+      Finalized.encode(message.finalized, writer.uint32(34).fork()).ldelim();
+    }
+    if (message.processed !== undefined) {
+      Processed.encode(message.processed, writer.uint32(42).fork()).ldelim();
+    }
+    if (message.dropped !== undefined) {
+      Dropped.encode(message.dropped, writer.uint32(50).fork()).ldelim();
+    }
     return writer;
   },
 
   decode(input: _m0.Reader | Uint8Array, length?: number): BundleResult {
-    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
     let end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseBundleResult();
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
         case 1:
+          if (tag !== 10) {
+            break;
+          }
+
           message.bundleId = reader.string();
-          break;
+          continue;
         case 2:
+          if (tag !== 18) {
+            break;
+          }
+
           message.accepted = Accepted.decode(reader, reader.uint32());
-          break;
+          continue;
         case 3:
+          if (tag !== 26) {
+            break;
+          }
+
           message.rejected = Rejected.decode(reader, reader.uint32());
-          break;
-        default:
-          reader.skipType(tag & 7);
-          break;
+          continue;
+        case 4:
+          if (tag !== 34) {
+            break;
+          }
+
+          message.finalized = Finalized.decode(reader, reader.uint32());
+          continue;
+        case 5:
+          if (tag !== 42) {
+            break;
+          }
+
+          message.processed = Processed.decode(reader, reader.uint32());
+          continue;
+        case 6:
+          if (tag !== 50) {
+            break;
+          }
+
+          message.dropped = Dropped.decode(reader, reader.uint32());
+          continue;
       }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
     }
     return message;
   },
@@ -749,6 +1147,9 @@ export const BundleResult = {
       bundleId: isSet(object.bundleId) ? String(object.bundleId) : "",
       accepted: isSet(object.accepted) ? Accepted.fromJSON(object.accepted) : undefined,
       rejected: isSet(object.rejected) ? Rejected.fromJSON(object.rejected) : undefined,
+      finalized: isSet(object.finalized) ? Finalized.fromJSON(object.finalized) : undefined,
+      processed: isSet(object.processed) ? Processed.fromJSON(object.processed) : undefined,
+      dropped: isSet(object.dropped) ? Dropped.fromJSON(object.dropped) : undefined,
     };
   },
 
@@ -757,6 +1158,11 @@ export const BundleResult = {
     message.bundleId !== undefined && (obj.bundleId = message.bundleId);
     message.accepted !== undefined && (obj.accepted = message.accepted ? Accepted.toJSON(message.accepted) : undefined);
     message.rejected !== undefined && (obj.rejected = message.rejected ? Rejected.toJSON(message.rejected) : undefined);
+    message.finalized !== undefined &&
+      (obj.finalized = message.finalized ? Finalized.toJSON(message.finalized) : undefined);
+    message.processed !== undefined &&
+      (obj.processed = message.processed ? Processed.toJSON(message.processed) : undefined);
+    message.dropped !== undefined && (obj.dropped = message.dropped ? Dropped.toJSON(message.dropped) : undefined);
     return obj;
   },
 
@@ -772,6 +1178,15 @@ export const BundleResult = {
       : undefined;
     message.rejected = (object.rejected !== undefined && object.rejected !== null)
       ? Rejected.fromPartial(object.rejected)
+      : undefined;
+    message.finalized = (object.finalized !== undefined && object.finalized !== null)
+      ? Finalized.fromPartial(object.finalized)
+      : undefined;
+    message.processed = (object.processed !== undefined && object.processed !== null)
+      ? Processed.fromPartial(object.processed)
+      : undefined;
+    message.dropped = (object.dropped !== undefined && object.dropped !== null)
+      ? Dropped.fromPartial(object.dropped)
       : undefined;
     return message;
   },

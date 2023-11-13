@@ -37,10 +37,11 @@ export enum TransactionErrorType {
   WOULD_EXCEED_ACCOUNT_DATA_TOTAL_LIMIT = 29,
   DUPLICATE_INSTRUCTION = 30,
   INSUFFICIENT_FUNDS_FOR_RENT = 31,
-  /** BUNDLE_NOT_CONTINUOUS - TODO (LB): this needs to be removed from here in jito-solana */
-  BUNDLE_NOT_CONTINUOUS = 32,
-  /** SKIPPED_EXECUTION - TODO (LB): this needs to be removed from here in jito-solana */
-  SKIPPED_EXECUTION = 33,
+  MAX_LOADED_ACCOUNTS_DATA_SIZE_EXCEEDED = 32,
+  INVALID_LOADED_ACCOUNTS_DATA_SIZE_LIMIT = 33,
+  RESANITIZATION_NEEDED = 34,
+  PROGRAM_EXECUTION_TEMPORARILY_RESTRICTED = 35,
+  UNBALANCED_TRANSACTION = 36,
   UNRECOGNIZED = -1,
 }
 
@@ -143,11 +144,20 @@ export function transactionErrorTypeFromJSON(object: any): TransactionErrorType 
     case "INSUFFICIENT_FUNDS_FOR_RENT":
       return TransactionErrorType.INSUFFICIENT_FUNDS_FOR_RENT;
     case 32:
-    case "BUNDLE_NOT_CONTINUOUS":
-      return TransactionErrorType.BUNDLE_NOT_CONTINUOUS;
+    case "MAX_LOADED_ACCOUNTS_DATA_SIZE_EXCEEDED":
+      return TransactionErrorType.MAX_LOADED_ACCOUNTS_DATA_SIZE_EXCEEDED;
     case 33:
-    case "SKIPPED_EXECUTION":
-      return TransactionErrorType.SKIPPED_EXECUTION;
+    case "INVALID_LOADED_ACCOUNTS_DATA_SIZE_LIMIT":
+      return TransactionErrorType.INVALID_LOADED_ACCOUNTS_DATA_SIZE_LIMIT;
+    case 34:
+    case "RESANITIZATION_NEEDED":
+      return TransactionErrorType.RESANITIZATION_NEEDED;
+    case 35:
+    case "PROGRAM_EXECUTION_TEMPORARILY_RESTRICTED":
+      return TransactionErrorType.PROGRAM_EXECUTION_TEMPORARILY_RESTRICTED;
+    case 36:
+    case "UNBALANCED_TRANSACTION":
+      return TransactionErrorType.UNBALANCED_TRANSACTION;
     case -1:
     case "UNRECOGNIZED":
     default:
@@ -221,10 +231,16 @@ export function transactionErrorTypeToJSON(object: TransactionErrorType): string
       return "DUPLICATE_INSTRUCTION";
     case TransactionErrorType.INSUFFICIENT_FUNDS_FOR_RENT:
       return "INSUFFICIENT_FUNDS_FOR_RENT";
-    case TransactionErrorType.BUNDLE_NOT_CONTINUOUS:
-      return "BUNDLE_NOT_CONTINUOUS";
-    case TransactionErrorType.SKIPPED_EXECUTION:
-      return "SKIPPED_EXECUTION";
+    case TransactionErrorType.MAX_LOADED_ACCOUNTS_DATA_SIZE_EXCEEDED:
+      return "MAX_LOADED_ACCOUNTS_DATA_SIZE_EXCEEDED";
+    case TransactionErrorType.INVALID_LOADED_ACCOUNTS_DATA_SIZE_LIMIT:
+      return "INVALID_LOADED_ACCOUNTS_DATA_SIZE_LIMIT";
+    case TransactionErrorType.RESANITIZATION_NEEDED:
+      return "RESANITIZATION_NEEDED";
+    case TransactionErrorType.PROGRAM_EXECUTION_TEMPORARILY_RESTRICTED:
+      return "PROGRAM_EXECUTION_TEMPORARILY_RESTRICTED";
+    case TransactionErrorType.UNBALANCED_TRANSACTION:
+      return "UNBALANCED_TRANSACTION";
     case TransactionErrorType.UNRECOGNIZED:
     default:
       return "UNRECOGNIZED";
@@ -282,8 +298,10 @@ export enum InstructionErrorType {
   ARITHMETIC_OVERFLOW = 47,
   UNSUPPORTED_SYSVAR = 48,
   ILLEGAL_OWNER = 49,
-  MAX_ACCOUNTS_DATA_SIZE_EXCEEDED = 50,
+  MAX_ACCOUNTS_DATA_ALLOCATIONS_EXCEEDED = 50,
   MAX_ACCOUNTS_EXCEEDED = 51,
+  MAX_INSTRUCTION_TRACE_LENGTH_EXCEEDED = 52,
+  BUILTIN_PROGRAMS_MUST_CONSUME_COMPUTE_UNITS = 53,
   UNRECOGNIZED = -1,
 }
 
@@ -440,11 +458,17 @@ export function instructionErrorTypeFromJSON(object: any): InstructionErrorType 
     case "ILLEGAL_OWNER":
       return InstructionErrorType.ILLEGAL_OWNER;
     case 50:
-    case "MAX_ACCOUNTS_DATA_SIZE_EXCEEDED":
-      return InstructionErrorType.MAX_ACCOUNTS_DATA_SIZE_EXCEEDED;
+    case "MAX_ACCOUNTS_DATA_ALLOCATIONS_EXCEEDED":
+      return InstructionErrorType.MAX_ACCOUNTS_DATA_ALLOCATIONS_EXCEEDED;
     case 51:
     case "MAX_ACCOUNTS_EXCEEDED":
       return InstructionErrorType.MAX_ACCOUNTS_EXCEEDED;
+    case 52:
+    case "MAX_INSTRUCTION_TRACE_LENGTH_EXCEEDED":
+      return InstructionErrorType.MAX_INSTRUCTION_TRACE_LENGTH_EXCEEDED;
+    case 53:
+    case "BUILTIN_PROGRAMS_MUST_CONSUME_COMPUTE_UNITS":
+      return InstructionErrorType.BUILTIN_PROGRAMS_MUST_CONSUME_COMPUTE_UNITS;
     case -1:
     case "UNRECOGNIZED":
     default:
@@ -554,10 +578,14 @@ export function instructionErrorTypeToJSON(object: InstructionErrorType): string
       return "UNSUPPORTED_SYSVAR";
     case InstructionErrorType.ILLEGAL_OWNER:
       return "ILLEGAL_OWNER";
-    case InstructionErrorType.MAX_ACCOUNTS_DATA_SIZE_EXCEEDED:
-      return "MAX_ACCOUNTS_DATA_SIZE_EXCEEDED";
+    case InstructionErrorType.MAX_ACCOUNTS_DATA_ALLOCATIONS_EXCEEDED:
+      return "MAX_ACCOUNTS_DATA_ALLOCATIONS_EXCEEDED";
     case InstructionErrorType.MAX_ACCOUNTS_EXCEEDED:
       return "MAX_ACCOUNTS_EXCEEDED";
+    case InstructionErrorType.MAX_INSTRUCTION_TRACE_LENGTH_EXCEEDED:
+      return "MAX_INSTRUCTION_TRACE_LENGTH_EXCEEDED";
+    case InstructionErrorType.BUILTIN_PROGRAMS_MUST_CONSUME_COMPUTE_UNITS:
+      return "BUILTIN_PROGRAMS_MUST_CONSUME_COMPUTE_UNITS";
     case InstructionErrorType.UNRECOGNIZED:
     default:
       return "UNRECOGNIZED";
@@ -617,19 +645,24 @@ export const TransactionByAddr = {
   },
 
   decode(input: _m0.Reader | Uint8Array, length?: number): TransactionByAddr {
-    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
     let end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseTransactionByAddr();
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
         case 1:
+          if (tag !== 10) {
+            break;
+          }
+
           message.txByAddrs.push(TransactionByAddrInfo.decode(reader, reader.uint32()));
-          break;
-        default:
-          reader.skipType(tag & 7);
-          break;
+          continue;
       }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
     }
     return message;
   },
@@ -688,31 +721,52 @@ export const TransactionByAddrInfo = {
   },
 
   decode(input: _m0.Reader | Uint8Array, length?: number): TransactionByAddrInfo {
-    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
     let end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseTransactionByAddrInfo();
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
         case 1:
+          if (tag !== 10) {
+            break;
+          }
+
           message.signature = reader.bytes();
-          break;
+          continue;
         case 2:
+          if (tag !== 18) {
+            break;
+          }
+
           message.err = TransactionError.decode(reader, reader.uint32());
-          break;
+          continue;
         case 3:
+          if (tag !== 24) {
+            break;
+          }
+
           message.index = reader.uint32();
-          break;
+          continue;
         case 4:
+          if (tag !== 34) {
+            break;
+          }
+
           message.memo = Memo.decode(reader, reader.uint32());
-          break;
+          continue;
         case 5:
+          if (tag !== 42) {
+            break;
+          }
+
           message.blockTime = UnixTimestamp.decode(reader, reader.uint32());
-          break;
-        default:
-          reader.skipType(tag & 7);
-          break;
+          continue;
       }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
     }
     return message;
   },
@@ -771,19 +825,24 @@ export const Memo = {
   },
 
   decode(input: _m0.Reader | Uint8Array, length?: number): Memo {
-    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
     let end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseMemo();
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
         case 1:
+          if (tag !== 10) {
+            break;
+          }
+
           message.memo = reader.string();
-          break;
-        default:
-          reader.skipType(tag & 7);
-          break;
+          continue;
       }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
     }
     return message;
   },
@@ -828,25 +887,38 @@ export const TransactionError = {
   },
 
   decode(input: _m0.Reader | Uint8Array, length?: number): TransactionError {
-    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
     let end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseTransactionError();
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
         case 1:
+          if (tag !== 8) {
+            break;
+          }
+
           message.transactionError = reader.int32() as any;
-          break;
+          continue;
         case 2:
+          if (tag !== 18) {
+            break;
+          }
+
           message.instructionError = InstructionError.decode(reader, reader.uint32());
-          break;
+          continue;
         case 3:
+          if (tag !== 26) {
+            break;
+          }
+
           message.transactionDetails = TransactionDetails.decode(reader, reader.uint32());
-          break;
-        default:
-          reader.skipType(tag & 7);
-          break;
+          continue;
       }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
     }
     return message;
   },
@@ -909,25 +981,38 @@ export const InstructionError = {
   },
 
   decode(input: _m0.Reader | Uint8Array, length?: number): InstructionError {
-    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
     let end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseInstructionError();
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
         case 1:
+          if (tag !== 8) {
+            break;
+          }
+
           message.index = reader.uint32();
-          break;
+          continue;
         case 2:
+          if (tag !== 16) {
+            break;
+          }
+
           message.error = reader.int32() as any;
-          break;
+          continue;
         case 3:
+          if (tag !== 26) {
+            break;
+          }
+
           message.custom = CustomError.decode(reader, reader.uint32());
-          break;
-        default:
-          reader.skipType(tag & 7);
-          break;
+          continue;
       }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
     }
     return message;
   },
@@ -976,19 +1061,24 @@ export const TransactionDetails = {
   },
 
   decode(input: _m0.Reader | Uint8Array, length?: number): TransactionDetails {
-    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
     let end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseTransactionDetails();
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
         case 1:
+          if (tag !== 8) {
+            break;
+          }
+
           message.index = reader.uint32();
-          break;
-        default:
-          reader.skipType(tag & 7);
-          break;
+          continue;
       }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
     }
     return message;
   },
@@ -1027,19 +1117,24 @@ export const UnixTimestamp = {
   },
 
   decode(input: _m0.Reader | Uint8Array, length?: number): UnixTimestamp {
-    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
     let end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseUnixTimestamp();
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
         case 1:
+          if (tag !== 8) {
+            break;
+          }
+
           message.timestamp = longToNumber(reader.int64() as Long);
-          break;
-        default:
-          reader.skipType(tag & 7);
-          break;
+          continue;
       }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
     }
     return message;
   },
@@ -1078,19 +1173,24 @@ export const CustomError = {
   },
 
   decode(input: _m0.Reader | Uint8Array, length?: number): CustomError {
-    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
     let end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseCustomError();
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
         case 1:
+          if (tag !== 8) {
+            break;
+          }
+
           message.custom = reader.uint32();
-          break;
-        default:
-          reader.skipType(tag & 7);
-          break;
+          continue;
       }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
     }
     return message;
   },
