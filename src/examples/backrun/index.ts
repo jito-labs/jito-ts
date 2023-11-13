@@ -31,7 +31,14 @@ const main = async () => {
   console.log('RPC_URL:', rpcUrl);
   const conn = new Connection(rpcUrl, 'confirmed');
 
-  await onAccountUpdates(c, accounts, bundleTransactionLimit, keypair, conn);
+  await onAccountUpdates(
+    c,
+    accounts,
+    [],
+    bundleTransactionLimit,
+    keypair,
+    conn
+  );
   onBundleResult(c);
 };
 

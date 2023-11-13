@@ -126,7 +126,19 @@ export interface TransactionError {
 
 export interface InnerInstructions {
   index: number;
-  instructions: CompiledInstruction[];
+  instructions: InnerInstruction[];
+}
+
+export interface InnerInstruction {
+  programIdIndex: number;
+  accounts: Uint8Array;
+  data: Uint8Array;
+  /**
+   * Invocation stack height of an inner instruction.
+   * Available since Solana v1.14.6
+   * Set to `None` for txs executed on earlier versions.
+   */
+  stackHeight?: number | undefined;
 }
 
 export interface CompiledInstruction {
@@ -1064,7 +1076,7 @@ export const InnerInstructions = {
       writer.uint32(8).uint32(message.index);
     }
     for (const v of message.instructions) {
-      CompiledInstruction.encode(v!, writer.uint32(18).fork()).ldelim();
+      InnerInstruction.encode(v!, writer.uint32(18).fork()).ldelim();
     }
     return writer;
   },
@@ -1080,7 +1092,7 @@ export const InnerInstructions = {
           message.index = reader.uint32();
           break;
         case 2:
-          message.instructions.push(CompiledInstruction.decode(reader, reader.uint32()));
+          message.instructions.push(InnerInstruction.decode(reader, reader.uint32()));
           break;
         default:
           reader.skipType(tag & 7);
@@ -1094,7 +1106,7 @@ export const InnerInstructions = {
     return {
       index: isSet(object.index) ? Number(object.index) : 0,
       instructions: Array.isArray(object?.instructions)
-        ? object.instructions.map((e: any) => CompiledInstruction.fromJSON(e))
+        ? object.instructions.map((e: any) => InnerInstruction.fromJSON(e))
         : [],
     };
   },
@@ -1103,7 +1115,7 @@ export const InnerInstructions = {
     const obj: any = {};
     message.index !== undefined && (obj.index = Math.round(message.index));
     if (message.instructions) {
-      obj.instructions = message.instructions.map((e) => e ? CompiledInstruction.toJSON(e) : undefined);
+      obj.instructions = message.instructions.map((e) => e ? InnerInstruction.toJSON(e) : undefined);
     } else {
       obj.instructions = [];
     }
@@ -1117,7 +1129,89 @@ export const InnerInstructions = {
   fromPartial<I extends Exact<DeepPartial<InnerInstructions>, I>>(object: I): InnerInstructions {
     const message = createBaseInnerInstructions();
     message.index = object.index ?? 0;
-    message.instructions = object.instructions?.map((e) => CompiledInstruction.fromPartial(e)) || [];
+    message.instructions = object.instructions?.map((e) => InnerInstruction.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBaseInnerInstruction(): InnerInstruction {
+  return { programIdIndex: 0, accounts: new Uint8Array(), data: new Uint8Array(), stackHeight: undefined };
+}
+
+export const InnerInstruction = {
+  encode(message: InnerInstruction, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.programIdIndex !== 0) {
+      writer.uint32(8).uint32(message.programIdIndex);
+    }
+    if (message.accounts.length !== 0) {
+      writer.uint32(18).bytes(message.accounts);
+    }
+    if (message.data.length !== 0) {
+      writer.uint32(26).bytes(message.data);
+    }
+    if (message.stackHeight !== undefined) {
+      writer.uint32(32).uint32(message.stackHeight);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): InnerInstruction {
+    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseInnerInstruction();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          message.programIdIndex = reader.uint32();
+          break;
+        case 2:
+          message.accounts = reader.bytes();
+          break;
+        case 3:
+          message.data = reader.bytes();
+          break;
+        case 4:
+          message.stackHeight = reader.uint32();
+          break;
+        default:
+          reader.skipType(tag & 7);
+          break;
+      }
+    }
+    return message;
+  },
+
+  fromJSON(object: any): InnerInstruction {
+    return {
+      programIdIndex: isSet(object.programIdIndex) ? Number(object.programIdIndex) : 0,
+      accounts: isSet(object.accounts) ? bytesFromBase64(object.accounts) : new Uint8Array(),
+      data: isSet(object.data) ? bytesFromBase64(object.data) : new Uint8Array(),
+      stackHeight: isSet(object.stackHeight) ? Number(object.stackHeight) : undefined,
+    };
+  },
+
+  toJSON(message: InnerInstruction): unknown {
+    const obj: any = {};
+    message.programIdIndex !== undefined && (obj.programIdIndex = Math.round(message.programIdIndex));
+    message.accounts !== undefined &&
+      (obj.accounts = base64FromBytes(message.accounts !== undefined ? message.accounts : new Uint8Array()));
+    message.data !== undefined &&
+      (obj.data = base64FromBytes(message.data !== undefined ? message.data : new Uint8Array()));
+    message.stackHeight !== undefined && (obj.stackHeight = Math.round(message.stackHeight));
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<InnerInstruction>, I>>(base?: I): InnerInstruction {
+    return InnerInstruction.fromPartial(base ?? {});
+  },
+
+  fromPartial<I extends Exact<DeepPartial<InnerInstruction>, I>>(object: I): InnerInstruction {
+    const message = createBaseInnerInstruction();
+    message.programIdIndex = object.programIdIndex ?? 0;
+    message.accounts = object.accounts ?? new Uint8Array();
+    message.data = object.data ?? new Uint8Array();
+    message.stackHeight = object.stackHeight ?? undefined;
     return message;
   },
 };

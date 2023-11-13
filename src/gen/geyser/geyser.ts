@@ -160,6 +160,8 @@ export interface BlockUpdate {
   rewards: Reward[];
   blockTime: Date | undefined;
   blockHeight?: number | undefined;
+  executedTransactionCount?: number | undefined;
+  entryCount?: number | undefined;
 }
 
 export interface TimestampedBlockUpdate {
@@ -925,7 +927,15 @@ export const EmptyRequest = {
 };
 
 function createBaseBlockUpdate(): BlockUpdate {
-  return { slot: 0, blockhash: "", rewards: [], blockTime: undefined, blockHeight: undefined };
+  return {
+    slot: 0,
+    blockhash: "",
+    rewards: [],
+    blockTime: undefined,
+    blockHeight: undefined,
+    executedTransactionCount: undefined,
+    entryCount: undefined,
+  };
 }
 
 export const BlockUpdate = {
@@ -944,6 +954,12 @@ export const BlockUpdate = {
     }
     if (message.blockHeight !== undefined) {
       writer.uint32(40).uint64(message.blockHeight);
+    }
+    if (message.executedTransactionCount !== undefined) {
+      writer.uint32(48).uint64(message.executedTransactionCount);
+    }
+    if (message.entryCount !== undefined) {
+      writer.uint32(56).uint64(message.entryCount);
     }
     return writer;
   },
@@ -970,6 +986,12 @@ export const BlockUpdate = {
         case 5:
           message.blockHeight = longToNumber(reader.uint64() as Long);
           break;
+        case 6:
+          message.executedTransactionCount = longToNumber(reader.uint64() as Long);
+          break;
+        case 7:
+          message.entryCount = longToNumber(reader.uint64() as Long);
+          break;
         default:
           reader.skipType(tag & 7);
           break;
@@ -985,6 +1007,10 @@ export const BlockUpdate = {
       rewards: Array.isArray(object?.rewards) ? object.rewards.map((e: any) => Reward.fromJSON(e)) : [],
       blockTime: isSet(object.blockTime) ? fromJsonTimestamp(object.blockTime) : undefined,
       blockHeight: isSet(object.blockHeight) ? Number(object.blockHeight) : undefined,
+      executedTransactionCount: isSet(object.executedTransactionCount)
+        ? Number(object.executedTransactionCount)
+        : undefined,
+      entryCount: isSet(object.entryCount) ? Number(object.entryCount) : undefined,
     };
   },
 
@@ -999,6 +1025,9 @@ export const BlockUpdate = {
     }
     message.blockTime !== undefined && (obj.blockTime = message.blockTime.toISOString());
     message.blockHeight !== undefined && (obj.blockHeight = Math.round(message.blockHeight));
+    message.executedTransactionCount !== undefined &&
+      (obj.executedTransactionCount = Math.round(message.executedTransactionCount));
+    message.entryCount !== undefined && (obj.entryCount = Math.round(message.entryCount));
     return obj;
   },
 
@@ -1013,6 +1042,8 @@ export const BlockUpdate = {
     message.rewards = object.rewards?.map((e) => Reward.fromPartial(e)) || [];
     message.blockTime = object.blockTime ?? undefined;
     message.blockHeight = object.blockHeight ?? undefined;
+    message.executedTransactionCount = object.executedTransactionCount ?? undefined;
+    message.entryCount = object.entryCount ?? undefined;
     return message;
   },
 };
