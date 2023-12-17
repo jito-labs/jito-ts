@@ -25,6 +25,16 @@ export interface SlotList {
   slots: number[];
 }
 
+export interface ConnectedLeadersResponse {
+  /** Mapping of validator pubkey to leader slots for the current epoch. */
+  connectedValidators: { [key: string]: SlotList };
+}
+
+export interface ConnectedLeadersResponse_ConnectedValidatorsEntry {
+  key: string;
+  value: SlotList | undefined;
+}
+
 export interface SendBundleRequest {
   bundle: Bundle | undefined;
 }
@@ -35,16 +45,28 @@ export interface SendBundleResponse {
 }
 
 export interface ProgramSubscriptionV0 {
+  /** Base58 encoded program id that transactions mention */
   programs: string[];
 }
 
 export interface WriteLockedAccountSubscriptionV0 {
+  /** Base58 encoded account pubkey that transactions mention */
   accounts: string[];
 }
 
 export interface MempoolSubscription {
-  programV0Sub?: ProgramSubscriptionV0 | undefined;
-  wlaV0Sub?: WriteLockedAccountSubscriptionV0 | undefined;
+  programV0Sub?:
+    | ProgramSubscriptionV0
+    | undefined;
+  /** / field numbers upto (and incl) 9 are reserved */
+  wlaV0Sub?:
+    | WriteLockedAccountSubscriptionV0
+    | undefined;
+  /**
+   * Filters transactions to originate from specified regions.
+   * Defaults to the currently connected region.
+   */
+  regions: string[];
 }
 
 export interface PendingTxSubscriptionRequest {
@@ -82,13 +104,18 @@ export interface NextScheduledLeaderResponse {
 export interface ConnectedLeadersRequest {
 }
 
-export interface ConnectedLeadersResponse {
-  connectedValidators: { [key: string]: SlotList };
+export interface ConnectedLeadersRegionedRequest {
+  /** Defaults to the currently connected region if no region provided. */
+  regions: string[];
 }
 
-export interface ConnectedLeadersResponse_ConnectedValidatorsEntry {
+export interface ConnectedLeadersRegionedResponse {
+  connectedValidators: { [key: string]: ConnectedLeadersResponse };
+}
+
+export interface ConnectedLeadersRegionedResponse_ConnectedValidatorsEntry {
   key: string;
-  value: SlotList | undefined;
+  value: ConnectedLeadersResponse | undefined;
 }
 
 export interface GetTipAccountsRequest {
@@ -99,6 +126,19 @@ export interface GetTipAccountsResponse {
 }
 
 export interface SubscribeBundleResultsRequest {
+}
+
+export interface GetRegionsRequest {
+}
+
+export interface GetRegionsResponse {
+  /** The region the client is currently connected to */
+  currentRegion: string;
+  /**
+   * Regions that are online and ready for connections
+   * All regions: https://jito-labs.gitbook.io/mev/systems/connecting/mainnet
+   */
+  availableRegions: string[];
 }
 
 function createBaseSlotList(): SlotList {
@@ -161,6 +201,152 @@ export const SlotList = {
   fromPartial<I extends Exact<DeepPartial<SlotList>, I>>(object: I): SlotList {
     const message = createBaseSlotList();
     message.slots = object.slots?.map((e) => e) || [];
+    return message;
+  },
+};
+
+function createBaseConnectedLeadersResponse(): ConnectedLeadersResponse {
+  return { connectedValidators: {} };
+}
+
+export const ConnectedLeadersResponse = {
+  encode(message: ConnectedLeadersResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    Object.entries(message.connectedValidators).forEach(([key, value]) => {
+      ConnectedLeadersResponse_ConnectedValidatorsEntry.encode({ key: key as any, value }, writer.uint32(10).fork())
+        .ldelim();
+    });
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): ConnectedLeadersResponse {
+    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseConnectedLeadersResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          const entry1 = ConnectedLeadersResponse_ConnectedValidatorsEntry.decode(reader, reader.uint32());
+          if (entry1.value !== undefined) {
+            message.connectedValidators[entry1.key] = entry1.value;
+          }
+          break;
+        default:
+          reader.skipType(tag & 7);
+          break;
+      }
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ConnectedLeadersResponse {
+    return {
+      connectedValidators: isObject(object.connectedValidators)
+        ? Object.entries(object.connectedValidators).reduce<{ [key: string]: SlotList }>((acc, [key, value]) => {
+          acc[key] = SlotList.fromJSON(value);
+          return acc;
+        }, {})
+        : {},
+    };
+  },
+
+  toJSON(message: ConnectedLeadersResponse): unknown {
+    const obj: any = {};
+    obj.connectedValidators = {};
+    if (message.connectedValidators) {
+      Object.entries(message.connectedValidators).forEach(([k, v]) => {
+        obj.connectedValidators[k] = SlotList.toJSON(v);
+      });
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<ConnectedLeadersResponse>, I>>(base?: I): ConnectedLeadersResponse {
+    return ConnectedLeadersResponse.fromPartial(base ?? {});
+  },
+
+  fromPartial<I extends Exact<DeepPartial<ConnectedLeadersResponse>, I>>(object: I): ConnectedLeadersResponse {
+    const message = createBaseConnectedLeadersResponse();
+    message.connectedValidators = Object.entries(object.connectedValidators ?? {}).reduce<{ [key: string]: SlotList }>(
+      (acc, [key, value]) => {
+        if (value !== undefined) {
+          acc[key] = SlotList.fromPartial(value);
+        }
+        return acc;
+      },
+      {},
+    );
+    return message;
+  },
+};
+
+function createBaseConnectedLeadersResponse_ConnectedValidatorsEntry(): ConnectedLeadersResponse_ConnectedValidatorsEntry {
+  return { key: "", value: undefined };
+}
+
+export const ConnectedLeadersResponse_ConnectedValidatorsEntry = {
+  encode(
+    message: ConnectedLeadersResponse_ConnectedValidatorsEntry,
+    writer: _m0.Writer = _m0.Writer.create(),
+  ): _m0.Writer {
+    if (message.key !== "") {
+      writer.uint32(10).string(message.key);
+    }
+    if (message.value !== undefined) {
+      SlotList.encode(message.value, writer.uint32(18).fork()).ldelim();
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): ConnectedLeadersResponse_ConnectedValidatorsEntry {
+    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseConnectedLeadersResponse_ConnectedValidatorsEntry();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          message.key = reader.string();
+          break;
+        case 2:
+          message.value = SlotList.decode(reader, reader.uint32());
+          break;
+        default:
+          reader.skipType(tag & 7);
+          break;
+      }
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ConnectedLeadersResponse_ConnectedValidatorsEntry {
+    return {
+      key: isSet(object.key) ? String(object.key) : "",
+      value: isSet(object.value) ? SlotList.fromJSON(object.value) : undefined,
+    };
+  },
+
+  toJSON(message: ConnectedLeadersResponse_ConnectedValidatorsEntry): unknown {
+    const obj: any = {};
+    message.key !== undefined && (obj.key = message.key);
+    message.value !== undefined && (obj.value = message.value ? SlotList.toJSON(message.value) : undefined);
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<ConnectedLeadersResponse_ConnectedValidatorsEntry>, I>>(
+    base?: I,
+  ): ConnectedLeadersResponse_ConnectedValidatorsEntry {
+    return ConnectedLeadersResponse_ConnectedValidatorsEntry.fromPartial(base ?? {});
+  },
+
+  fromPartial<I extends Exact<DeepPartial<ConnectedLeadersResponse_ConnectedValidatorsEntry>, I>>(
+    object: I,
+  ): ConnectedLeadersResponse_ConnectedValidatorsEntry {
+    const message = createBaseConnectedLeadersResponse_ConnectedValidatorsEntry();
+    message.key = object.key ?? "";
+    message.value = (object.value !== undefined && object.value !== null)
+      ? SlotList.fromPartial(object.value)
+      : undefined;
     return message;
   },
 };
@@ -384,7 +570,7 @@ export const WriteLockedAccountSubscriptionV0 = {
 };
 
 function createBaseMempoolSubscription(): MempoolSubscription {
-  return { programV0Sub: undefined, wlaV0Sub: undefined };
+  return { programV0Sub: undefined, wlaV0Sub: undefined, regions: [] };
 }
 
 export const MempoolSubscription = {
@@ -394,6 +580,9 @@ export const MempoolSubscription = {
     }
     if (message.wlaV0Sub !== undefined) {
       WriteLockedAccountSubscriptionV0.encode(message.wlaV0Sub, writer.uint32(18).fork()).ldelim();
+    }
+    for (const v of message.regions) {
+      writer.uint32(82).string(v!);
     }
     return writer;
   },
@@ -411,6 +600,9 @@ export const MempoolSubscription = {
         case 2:
           message.wlaV0Sub = WriteLockedAccountSubscriptionV0.decode(reader, reader.uint32());
           break;
+        case 10:
+          message.regions.push(reader.string());
+          break;
         default:
           reader.skipType(tag & 7);
           break;
@@ -423,6 +615,7 @@ export const MempoolSubscription = {
     return {
       programV0Sub: isSet(object.programV0Sub) ? ProgramSubscriptionV0.fromJSON(object.programV0Sub) : undefined,
       wlaV0Sub: isSet(object.wlaV0Sub) ? WriteLockedAccountSubscriptionV0.fromJSON(object.wlaV0Sub) : undefined,
+      regions: Array.isArray(object?.regions) ? object.regions.map((e: any) => String(e)) : [],
     };
   },
 
@@ -432,6 +625,11 @@ export const MempoolSubscription = {
       (obj.programV0Sub = message.programV0Sub ? ProgramSubscriptionV0.toJSON(message.programV0Sub) : undefined);
     message.wlaV0Sub !== undefined &&
       (obj.wlaV0Sub = message.wlaV0Sub ? WriteLockedAccountSubscriptionV0.toJSON(message.wlaV0Sub) : undefined);
+    if (message.regions) {
+      obj.regions = message.regions.map((e) => e);
+    } else {
+      obj.regions = [];
+    }
     return obj;
   },
 
@@ -447,6 +645,7 @@ export const MempoolSubscription = {
     message.wlaV0Sub = (object.wlaV0Sub !== undefined && object.wlaV0Sub !== null)
       ? WriteLockedAccountSubscriptionV0.fromPartial(object.wlaV0Sub)
       : undefined;
+    message.regions = object.regions?.map((e) => e) || [];
     return message;
   },
 };
@@ -738,28 +937,87 @@ export const ConnectedLeadersRequest = {
   },
 };
 
-function createBaseConnectedLeadersResponse(): ConnectedLeadersResponse {
-  return { connectedValidators: {} };
+function createBaseConnectedLeadersRegionedRequest(): ConnectedLeadersRegionedRequest {
+  return { regions: [] };
 }
 
-export const ConnectedLeadersResponse = {
-  encode(message: ConnectedLeadersResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-    Object.entries(message.connectedValidators).forEach(([key, value]) => {
-      ConnectedLeadersResponse_ConnectedValidatorsEntry.encode({ key: key as any, value }, writer.uint32(10).fork())
-        .ldelim();
-    });
+export const ConnectedLeadersRegionedRequest = {
+  encode(message: ConnectedLeadersRegionedRequest, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    for (const v of message.regions) {
+      writer.uint32(10).string(v!);
+    }
     return writer;
   },
 
-  decode(input: _m0.Reader | Uint8Array, length?: number): ConnectedLeadersResponse {
+  decode(input: _m0.Reader | Uint8Array, length?: number): ConnectedLeadersRegionedRequest {
     const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
     let end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseConnectedLeadersResponse();
+    const message = createBaseConnectedLeadersRegionedRequest();
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
         case 1:
-          const entry1 = ConnectedLeadersResponse_ConnectedValidatorsEntry.decode(reader, reader.uint32());
+          message.regions.push(reader.string());
+          break;
+        default:
+          reader.skipType(tag & 7);
+          break;
+      }
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ConnectedLeadersRegionedRequest {
+    return { regions: Array.isArray(object?.regions) ? object.regions.map((e: any) => String(e)) : [] };
+  },
+
+  toJSON(message: ConnectedLeadersRegionedRequest): unknown {
+    const obj: any = {};
+    if (message.regions) {
+      obj.regions = message.regions.map((e) => e);
+    } else {
+      obj.regions = [];
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<ConnectedLeadersRegionedRequest>, I>>(base?: I): ConnectedLeadersRegionedRequest {
+    return ConnectedLeadersRegionedRequest.fromPartial(base ?? {});
+  },
+
+  fromPartial<I extends Exact<DeepPartial<ConnectedLeadersRegionedRequest>, I>>(
+    object: I,
+  ): ConnectedLeadersRegionedRequest {
+    const message = createBaseConnectedLeadersRegionedRequest();
+    message.regions = object.regions?.map((e) => e) || [];
+    return message;
+  },
+};
+
+function createBaseConnectedLeadersRegionedResponse(): ConnectedLeadersRegionedResponse {
+  return { connectedValidators: {} };
+}
+
+export const ConnectedLeadersRegionedResponse = {
+  encode(message: ConnectedLeadersRegionedResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    Object.entries(message.connectedValidators).forEach(([key, value]) => {
+      ConnectedLeadersRegionedResponse_ConnectedValidatorsEntry.encode(
+        { key: key as any, value },
+        writer.uint32(10).fork(),
+      ).ldelim();
+    });
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): ConnectedLeadersRegionedResponse {
+    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseConnectedLeadersRegionedResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          const entry1 = ConnectedLeadersRegionedResponse_ConnectedValidatorsEntry.decode(reader, reader.uint32());
           if (entry1.value !== undefined) {
             message.connectedValidators[entry1.key] = entry1.value;
           }
@@ -772,69 +1030,75 @@ export const ConnectedLeadersResponse = {
     return message;
   },
 
-  fromJSON(object: any): ConnectedLeadersResponse {
+  fromJSON(object: any): ConnectedLeadersRegionedResponse {
     return {
       connectedValidators: isObject(object.connectedValidators)
-        ? Object.entries(object.connectedValidators).reduce<{ [key: string]: SlotList }>((acc, [key, value]) => {
-          acc[key] = SlotList.fromJSON(value);
-          return acc;
-        }, {})
+        ? Object.entries(object.connectedValidators).reduce<{ [key: string]: ConnectedLeadersResponse }>(
+          (acc, [key, value]) => {
+            acc[key] = ConnectedLeadersResponse.fromJSON(value);
+            return acc;
+          },
+          {},
+        )
         : {},
     };
   },
 
-  toJSON(message: ConnectedLeadersResponse): unknown {
+  toJSON(message: ConnectedLeadersRegionedResponse): unknown {
     const obj: any = {};
     obj.connectedValidators = {};
     if (message.connectedValidators) {
       Object.entries(message.connectedValidators).forEach(([k, v]) => {
-        obj.connectedValidators[k] = SlotList.toJSON(v);
+        obj.connectedValidators[k] = ConnectedLeadersResponse.toJSON(v);
       });
     }
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<ConnectedLeadersResponse>, I>>(base?: I): ConnectedLeadersResponse {
-    return ConnectedLeadersResponse.fromPartial(base ?? {});
+  create<I extends Exact<DeepPartial<ConnectedLeadersRegionedResponse>, I>>(
+    base?: I,
+  ): ConnectedLeadersRegionedResponse {
+    return ConnectedLeadersRegionedResponse.fromPartial(base ?? {});
   },
 
-  fromPartial<I extends Exact<DeepPartial<ConnectedLeadersResponse>, I>>(object: I): ConnectedLeadersResponse {
-    const message = createBaseConnectedLeadersResponse();
-    message.connectedValidators = Object.entries(object.connectedValidators ?? {}).reduce<{ [key: string]: SlotList }>(
-      (acc, [key, value]) => {
-        if (value !== undefined) {
-          acc[key] = SlotList.fromPartial(value);
-        }
-        return acc;
-      },
-      {},
-    );
+  fromPartial<I extends Exact<DeepPartial<ConnectedLeadersRegionedResponse>, I>>(
+    object: I,
+  ): ConnectedLeadersRegionedResponse {
+    const message = createBaseConnectedLeadersRegionedResponse();
+    message.connectedValidators = Object.entries(object.connectedValidators ?? {}).reduce<
+      { [key: string]: ConnectedLeadersResponse }
+    >((acc, [key, value]) => {
+      if (value !== undefined) {
+        acc[key] = ConnectedLeadersResponse.fromPartial(value);
+      }
+      return acc;
+    }, {});
     return message;
   },
 };
 
-function createBaseConnectedLeadersResponse_ConnectedValidatorsEntry(): ConnectedLeadersResponse_ConnectedValidatorsEntry {
+function createBaseConnectedLeadersRegionedResponse_ConnectedValidatorsEntry(): ConnectedLeadersRegionedResponse_ConnectedValidatorsEntry {
   return { key: "", value: undefined };
 }
 
-export const ConnectedLeadersResponse_ConnectedValidatorsEntry = {
+export const ConnectedLeadersRegionedResponse_ConnectedValidatorsEntry = {
   encode(
-    message: ConnectedLeadersResponse_ConnectedValidatorsEntry,
+    message: ConnectedLeadersRegionedResponse_ConnectedValidatorsEntry,
     writer: _m0.Writer = _m0.Writer.create(),
   ): _m0.Writer {
     if (message.key !== "") {
       writer.uint32(10).string(message.key);
     }
     if (message.value !== undefined) {
-      SlotList.encode(message.value, writer.uint32(18).fork()).ldelim();
+      ConnectedLeadersResponse.encode(message.value, writer.uint32(18).fork()).ldelim();
     }
     return writer;
   },
 
-  decode(input: _m0.Reader | Uint8Array, length?: number): ConnectedLeadersResponse_ConnectedValidatorsEntry {
+  decode(input: _m0.Reader | Uint8Array, length?: number): ConnectedLeadersRegionedResponse_ConnectedValidatorsEntry {
     const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
     let end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseConnectedLeadersResponse_ConnectedValidatorsEntry();
+    const message = createBaseConnectedLeadersRegionedResponse_ConnectedValidatorsEntry();
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
@@ -842,7 +1106,7 @@ export const ConnectedLeadersResponse_ConnectedValidatorsEntry = {
           message.key = reader.string();
           break;
         case 2:
-          message.value = SlotList.decode(reader, reader.uint32());
+          message.value = ConnectedLeadersResponse.decode(reader, reader.uint32());
           break;
         default:
           reader.skipType(tag & 7);
@@ -852,33 +1116,34 @@ export const ConnectedLeadersResponse_ConnectedValidatorsEntry = {
     return message;
   },
 
-  fromJSON(object: any): ConnectedLeadersResponse_ConnectedValidatorsEntry {
+  fromJSON(object: any): ConnectedLeadersRegionedResponse_ConnectedValidatorsEntry {
     return {
       key: isSet(object.key) ? String(object.key) : "",
-      value: isSet(object.value) ? SlotList.fromJSON(object.value) : undefined,
+      value: isSet(object.value) ? ConnectedLeadersResponse.fromJSON(object.value) : undefined,
     };
   },
 
-  toJSON(message: ConnectedLeadersResponse_ConnectedValidatorsEntry): unknown {
+  toJSON(message: ConnectedLeadersRegionedResponse_ConnectedValidatorsEntry): unknown {
     const obj: any = {};
     message.key !== undefined && (obj.key = message.key);
-    message.value !== undefined && (obj.value = message.value ? SlotList.toJSON(message.value) : undefined);
+    message.value !== undefined &&
+      (obj.value = message.value ? ConnectedLeadersResponse.toJSON(message.value) : undefined);
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<ConnectedLeadersResponse_ConnectedValidatorsEntry>, I>>(
+  create<I extends Exact<DeepPartial<ConnectedLeadersRegionedResponse_ConnectedValidatorsEntry>, I>>(
     base?: I,
-  ): ConnectedLeadersResponse_ConnectedValidatorsEntry {
-    return ConnectedLeadersResponse_ConnectedValidatorsEntry.fromPartial(base ?? {});
+  ): ConnectedLeadersRegionedResponse_ConnectedValidatorsEntry {
+    return ConnectedLeadersRegionedResponse_ConnectedValidatorsEntry.fromPartial(base ?? {});
   },
 
-  fromPartial<I extends Exact<DeepPartial<ConnectedLeadersResponse_ConnectedValidatorsEntry>, I>>(
+  fromPartial<I extends Exact<DeepPartial<ConnectedLeadersRegionedResponse_ConnectedValidatorsEntry>, I>>(
     object: I,
-  ): ConnectedLeadersResponse_ConnectedValidatorsEntry {
-    const message = createBaseConnectedLeadersResponse_ConnectedValidatorsEntry();
+  ): ConnectedLeadersRegionedResponse_ConnectedValidatorsEntry {
+    const message = createBaseConnectedLeadersRegionedResponse_ConnectedValidatorsEntry();
     message.key = object.key ?? "";
     message.value = (object.value !== undefined && object.value !== null)
-      ? SlotList.fromPartial(object.value)
+      ? ConnectedLeadersResponse.fromPartial(object.value)
       : undefined;
     return message;
   },
@@ -1025,6 +1290,117 @@ export const SubscribeBundleResultsRequest = {
   },
 };
 
+function createBaseGetRegionsRequest(): GetRegionsRequest {
+  return {};
+}
+
+export const GetRegionsRequest = {
+  encode(_: GetRegionsRequest, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): GetRegionsRequest {
+    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetRegionsRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        default:
+          reader.skipType(tag & 7);
+          break;
+      }
+    }
+    return message;
+  },
+
+  fromJSON(_: any): GetRegionsRequest {
+    return {};
+  },
+
+  toJSON(_: GetRegionsRequest): unknown {
+    const obj: any = {};
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<GetRegionsRequest>, I>>(base?: I): GetRegionsRequest {
+    return GetRegionsRequest.fromPartial(base ?? {});
+  },
+
+  fromPartial<I extends Exact<DeepPartial<GetRegionsRequest>, I>>(_: I): GetRegionsRequest {
+    const message = createBaseGetRegionsRequest();
+    return message;
+  },
+};
+
+function createBaseGetRegionsResponse(): GetRegionsResponse {
+  return { currentRegion: "", availableRegions: [] };
+}
+
+export const GetRegionsResponse = {
+  encode(message: GetRegionsResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.currentRegion !== "") {
+      writer.uint32(10).string(message.currentRegion);
+    }
+    for (const v of message.availableRegions) {
+      writer.uint32(18).string(v!);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): GetRegionsResponse {
+    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetRegionsResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          message.currentRegion = reader.string();
+          break;
+        case 2:
+          message.availableRegions.push(reader.string());
+          break;
+        default:
+          reader.skipType(tag & 7);
+          break;
+      }
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GetRegionsResponse {
+    return {
+      currentRegion: isSet(object.currentRegion) ? String(object.currentRegion) : "",
+      availableRegions: Array.isArray(object?.availableRegions)
+        ? object.availableRegions.map((e: any) => String(e))
+        : [],
+    };
+  },
+
+  toJSON(message: GetRegionsResponse): unknown {
+    const obj: any = {};
+    message.currentRegion !== undefined && (obj.currentRegion = message.currentRegion);
+    if (message.availableRegions) {
+      obj.availableRegions = message.availableRegions.map((e) => e);
+    } else {
+      obj.availableRegions = [];
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<GetRegionsResponse>, I>>(base?: I): GetRegionsResponse {
+    return GetRegionsResponse.fromPartial(base ?? {});
+  },
+
+  fromPartial<I extends Exact<DeepPartial<GetRegionsResponse>, I>>(object: I): GetRegionsResponse {
+    const message = createBaseGetRegionsResponse();
+    message.currentRegion = object.currentRegion ?? "";
+    message.availableRegions = object.availableRegions?.map((e) => e) || [];
+    return message;
+  },
+};
+
 export type SearcherServiceService = typeof SearcherServiceService;
 export const SearcherServiceService = {
   /**
@@ -1087,7 +1463,7 @@ export const SearcherServiceService = {
       Buffer.from(NextScheduledLeaderResponse.encode(value).finish()),
     responseDeserialize: (value: Buffer) => NextScheduledLeaderResponse.decode(value),
   },
-  /** Returns information on connected leader slots */
+  /** Returns leader slots for connected jito validators during the current epoch. Only returns data for this region. */
   getConnectedLeaders: {
     path: "/searcher.SearcherService/GetConnectedLeaders",
     requestStream: false,
@@ -1098,6 +1474,18 @@ export const SearcherServiceService = {
       Buffer.from(ConnectedLeadersResponse.encode(value).finish()),
     responseDeserialize: (value: Buffer) => ConnectedLeadersResponse.decode(value),
   },
+  /** Returns leader slots for connected jito validators during the current epoch. */
+  getConnectedLeadersRegioned: {
+    path: "/searcher.SearcherService/GetConnectedLeadersRegioned",
+    requestStream: false,
+    responseStream: false,
+    requestSerialize: (value: ConnectedLeadersRegionedRequest) =>
+      Buffer.from(ConnectedLeadersRegionedRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer) => ConnectedLeadersRegionedRequest.decode(value),
+    responseSerialize: (value: ConnectedLeadersRegionedResponse) =>
+      Buffer.from(ConnectedLeadersRegionedResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer) => ConnectedLeadersRegionedResponse.decode(value),
+  },
   /** Returns the tip accounts searchers shall transfer funds to for the leader to claim. */
   getTipAccounts: {
     path: "/searcher.SearcherService/GetTipAccounts",
@@ -1107,6 +1495,16 @@ export const SearcherServiceService = {
     requestDeserialize: (value: Buffer) => GetTipAccountsRequest.decode(value),
     responseSerialize: (value: GetTipAccountsResponse) => Buffer.from(GetTipAccountsResponse.encode(value).finish()),
     responseDeserialize: (value: Buffer) => GetTipAccountsResponse.decode(value),
+  },
+  /** Returns region the client is directly connected to, along with all available regions */
+  getRegions: {
+    path: "/searcher.SearcherService/GetRegions",
+    requestStream: false,
+    responseStream: false,
+    requestSerialize: (value: GetRegionsRequest) => Buffer.from(GetRegionsRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer) => GetRegionsRequest.decode(value),
+    responseSerialize: (value: GetRegionsResponse) => Buffer.from(GetRegionsResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer) => GetRegionsResponse.decode(value),
   },
 } as const;
 
@@ -1127,10 +1525,14 @@ export interface SearcherServiceServer extends UntypedServiceImplementation {
   sendBundle: handleUnaryCall<SendBundleRequest, SendBundleResponse>;
   /** Returns the next scheduled leader connected to the block engine. */
   getNextScheduledLeader: handleUnaryCall<NextScheduledLeaderRequest, NextScheduledLeaderResponse>;
-  /** Returns information on connected leader slots */
+  /** Returns leader slots for connected jito validators during the current epoch. Only returns data for this region. */
   getConnectedLeaders: handleUnaryCall<ConnectedLeadersRequest, ConnectedLeadersResponse>;
+  /** Returns leader slots for connected jito validators during the current epoch. */
+  getConnectedLeadersRegioned: handleUnaryCall<ConnectedLeadersRegionedRequest, ConnectedLeadersRegionedResponse>;
   /** Returns the tip accounts searchers shall transfer funds to for the leader to claim. */
   getTipAccounts: handleUnaryCall<GetTipAccountsRequest, GetTipAccountsResponse>;
+  /** Returns region the client is directly connected to, along with all available regions */
+  getRegions: handleUnaryCall<GetRegionsRequest, GetRegionsResponse>;
 }
 
 export interface SearcherServiceClient extends Client {
@@ -1202,7 +1604,7 @@ export interface SearcherServiceClient extends Client {
     options: Partial<CallOptions>,
     callback: (error: ServiceError | null, response: NextScheduledLeaderResponse) => void,
   ): ClientUnaryCall;
-  /** Returns information on connected leader slots */
+  /** Returns leader slots for connected jito validators during the current epoch. Only returns data for this region. */
   getConnectedLeaders(
     request: ConnectedLeadersRequest,
     callback: (error: ServiceError | null, response: ConnectedLeadersResponse) => void,
@@ -1217,6 +1619,22 @@ export interface SearcherServiceClient extends Client {
     metadata: Metadata,
     options: Partial<CallOptions>,
     callback: (error: ServiceError | null, response: ConnectedLeadersResponse) => void,
+  ): ClientUnaryCall;
+  /** Returns leader slots for connected jito validators during the current epoch. */
+  getConnectedLeadersRegioned(
+    request: ConnectedLeadersRegionedRequest,
+    callback: (error: ServiceError | null, response: ConnectedLeadersRegionedResponse) => void,
+  ): ClientUnaryCall;
+  getConnectedLeadersRegioned(
+    request: ConnectedLeadersRegionedRequest,
+    metadata: Metadata,
+    callback: (error: ServiceError | null, response: ConnectedLeadersRegionedResponse) => void,
+  ): ClientUnaryCall;
+  getConnectedLeadersRegioned(
+    request: ConnectedLeadersRegionedRequest,
+    metadata: Metadata,
+    options: Partial<CallOptions>,
+    callback: (error: ServiceError | null, response: ConnectedLeadersRegionedResponse) => void,
   ): ClientUnaryCall;
   /** Returns the tip accounts searchers shall transfer funds to for the leader to claim. */
   getTipAccounts(
@@ -1233,6 +1651,22 @@ export interface SearcherServiceClient extends Client {
     metadata: Metadata,
     options: Partial<CallOptions>,
     callback: (error: ServiceError | null, response: GetTipAccountsResponse) => void,
+  ): ClientUnaryCall;
+  /** Returns region the client is directly connected to, along with all available regions */
+  getRegions(
+    request: GetRegionsRequest,
+    callback: (error: ServiceError | null, response: GetRegionsResponse) => void,
+  ): ClientUnaryCall;
+  getRegions(
+    request: GetRegionsRequest,
+    metadata: Metadata,
+    callback: (error: ServiceError | null, response: GetRegionsResponse) => void,
+  ): ClientUnaryCall;
+  getRegions(
+    request: GetRegionsRequest,
+    metadata: Metadata,
+    options: Partial<CallOptions>,
+    callback: (error: ServiceError | null, response: GetRegionsResponse) => void,
   ): ClientUnaryCall;
 }
 

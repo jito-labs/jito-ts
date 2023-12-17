@@ -7,6 +7,7 @@
     "outDir": "dist",
     "resolveJsonModule": false,
     "esModuleInterop": true,
+    "lib": ["DOM"]
   },
   "include": [
     "src/**/*.ts",
