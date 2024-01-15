@@ -155,7 +155,7 @@ export class SearcherClient {
       errorCallback(new Error(`Stream error: ${e.message}`));
     });
 
-    return stream.cancel;
+    return () => stream.cancel();
   }
 
   /**
@@ -228,7 +228,7 @@ export class SearcherClient {
       errorCallback(new Error(`Stream error: ${e.message}`));
     });
 
-    return stream.cancel;
+    return () => stream.cancel();
   }
 
   /**
@@ -293,7 +293,7 @@ export class SearcherClient {
       errorCallback(new Error(`Stream error: ${e.message}`));
     });
 
-    return stream.cancel;
+    return () => stream.cancel();
   }
 
   /**

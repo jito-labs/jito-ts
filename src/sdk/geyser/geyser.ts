@@ -71,7 +71,7 @@ export class GeyserClient {
       errorCallback(new Error(`Stream error: ${e.message}`))
     );
 
-    return stream.cancel;
+    return () => stream.cancel();
   }
 
   /**
@@ -102,7 +102,7 @@ export class GeyserClient {
       errorCallback(new Error(`Stream error: ${e.message}`))
     );
 
-    return stream.cancel;
+    return () => stream.cancel();
   }
 
   /**
@@ -130,7 +130,7 @@ export class GeyserClient {
       errorCallback(new Error(`Stream error: ${e.message}`))
     );
 
-    return stream.cancel;
+    return () => stream.cancel();
   }
 }
 
