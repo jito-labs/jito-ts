@@ -322,24 +322,33 @@ export class SearcherClient {
  * Creates and returns a SearcherClient instance.
  *
  * @param url - The URL of the SearcherService
- * @param authKeypair - Keypair authorized for the block engine
+ * @param authKeypair - Optional Keypair authorized for the block engine
  * @param grpcOptions - Optional configuration options for the gRPC client
  * @returns SearcherClient - An instance of the SearcherClient
  */
 export const searcherClient = (
   url: string,
-  authKeypair: Keypair,
+  authKeypair?: Keypair,
   grpcOptions?: Partial<ChannelOptions>
 ): SearcherClient => {
-  const authProvider = new AuthProvider(
-    new AuthServiceClient(url, ChannelCredentials.createSsl()),
-    authKeypair
-  );
-  const client = new SearcherServiceClient(
-    url,
-    ChannelCredentials.createSsl(),
-    {interceptors: [authInterceptor(authProvider)], ...grpcOptions}
-  );
-
-  return new SearcherClient(client);
+  if (authKeypair) {
+    const authProvider = new AuthProvider(
+      new AuthServiceClient(url, ChannelCredentials.createSsl()),
+      authKeypair
+    );
+    const client = new SearcherServiceClient(
+      url,
+      ChannelCredentials.createSsl(),
+      {interceptors: [authInterceptor(authProvider)], ...grpcOptions}
+    );
+    return new SearcherClient(client);
+  } else {
+    return new SearcherClient(
+      new SearcherServiceClient(
+        url,
+        ChannelCredentials.createSsl(),
+        grpcOptions
+      )
+    );
+  }
 };

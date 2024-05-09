@@ -43,3 +43,6 @@ dist/**/*
 
 # ignore yarn.lock
 yarn.lock
+
+# ignore yarn cache
+.yarn

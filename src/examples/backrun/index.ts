@@ -25,7 +25,13 @@ const main = async () => {
     process.env.BUNDLE_TRANSACTION_LIMIT || '0'
   );
 
-  const c = searcherClient(blockEngineUrl, keypair);
+  // Set NO_AUTH = true to bypass authentication
+  const noAuth = process.env.NO_AUTH || '';
+  console.log('NO_AUTH:', noAuth);
+  const c =
+    noAuth === 'true'
+      ? searcherClient(blockEngineUrl, undefined)
+      : searcherClient(blockEngineUrl, keypair);
 
   const rpcUrl = process.env.RPC_URL || '';
   console.log('RPC_URL:', rpcUrl);
