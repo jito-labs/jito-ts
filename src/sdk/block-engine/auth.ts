@@ -23,6 +23,7 @@ import {
   Token,
 } from '../../gen/block-engine/auth';
 import {unixTimestampFromDate} from './utils';
+import {Mutex} from 'async-mutex';
 
 // Intercepts requests and sets the auth header.
 export const authInterceptor = (authProvider: AuthProvider): Interceptor => {
@@ -61,6 +62,7 @@ export class AuthProvider {
   private readonly authKeypair: Keypair;
   private accessToken: Jwt | undefined;
   private refreshToken: Jwt | undefined;
+  private mutex = new Mutex();
 
   constructor(client: AuthServiceClient, authKeypair: Keypair) {
     this.client = client;
@@ -69,27 +71,29 @@ export class AuthProvider {
 
   // Injects the current access token into the provided callback.
   // If it's expired then refreshes, if the refresh token is expired then runs the full auth flow.
-  public injectAccessToken(callback: (accessToken: Jwt) => void) {
-    if (
-      !this.accessToken ||
-      !this.refreshToken ||
-      this.refreshToken.isExpired()
-    ) {
-      this.fullAuth((accessToken: Jwt, refreshToken: Jwt) => {
-        this.accessToken = accessToken;
-        this.refreshToken = refreshToken;
-        callback(accessToken);
-      });
+  public async injectAccessToken(callback: (accessToken: Jwt) => void) {
+    await this.mutex.runExclusive(async () => {
+      if (
+        !this.accessToken ||
+        !this.refreshToken ||
+        this.refreshToken.isExpired()
+      ) {
+        this.fullAuth((accessToken: Jwt, refreshToken: Jwt) => {
+          this.accessToken = accessToken;
+          this.refreshToken = refreshToken;
+          callback(accessToken);
+        });
 
-      return;
-    }
+        return;
+      }
 
-    if (!this.accessToken?.isExpired()) {
-      callback(this.accessToken);
-      return;
-    }
+      if (!this.accessToken?.isExpired()) {
+        callback(this.accessToken);
+        return;
+      }
 
-    this.refreshAccessToken(callback);
+      this.refreshAccessToken(callback);
+    });
   }
 
   // Refresh access token and inject into callback.
