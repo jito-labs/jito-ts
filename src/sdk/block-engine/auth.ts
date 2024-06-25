@@ -84,7 +84,7 @@ export class AuthProvider {
       return;
     }
 
-    if (!this.accessToken?.isExpired()) {
+    if (this.accessToken?.isExpired()) {
       callback(this.accessToken);
       return;
     }
