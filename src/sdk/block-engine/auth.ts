@@ -8,8 +8,8 @@ import {
   ServiceError,
 } from '@grpc/grpc-js';
 
-import {Keypair} from '@solana/web3.js';
-import {NextCall} from '@grpc/grpc-js/build/src/client-interceptors';
+import { Keypair } from '@solana/web3.js';
+import { NextCall } from '@grpc/grpc-js/build/src/client-interceptors';
 
 import {
   AuthServiceClient,
@@ -22,7 +22,7 @@ import {
   Role,
   Token,
 } from '../../gen/block-engine/auth';
-import {unixTimestampFromDate} from './utils';
+import { unixTimestampFromDate } from './utils';
 
 // Intercepts requests and sets the auth header.
 export const authInterceptor = (authProvider: AuthProvider): Interceptor => {
@@ -61,6 +61,7 @@ export class AuthProvider {
   private readonly authKeypair: Keypair;
   private accessToken: Jwt | undefined;
   private refreshToken: Jwt | undefined;
+  private refreshing: Promise<void> | null = null;
 
   constructor(client: AuthServiceClient, authKeypair: Keypair) {
     this.client = client;
@@ -89,34 +90,45 @@ export class AuthProvider {
       return;
     }
 
-    this.refreshAccessToken(callback);
+    if (!this.refreshing) {
+      this.refreshing = this.refreshAccessToken().finally(() => {
+        this.refreshing = null;
+      });
+    }
+
+    this.refreshing.then(() => {
+      if (this.accessToken) {
+        callback(this.accessToken);
+      }
+    });
   }
 
-  // Refresh access token and inject into callback.
-  private refreshAccessToken(callback: (accessToken: Jwt) => void) {
-    this.client.refreshAccessToken(
-      {
-        refreshToken: this.refreshToken?.token,
-      } as RefreshAccessTokenRequest,
-      async (e: ServiceError | null, resp: RefreshAccessTokenResponse) => {
-        if (e) {
-          throw e;
-        }
+  // Refresh access token.
+  private async refreshAccessToken() {
+    return new Promise<void>((resolve, reject) => {
+      this.client.refreshAccessToken(
+        {
+          refreshToken: this.refreshToken?.token,
+        } as RefreshAccessTokenRequest,
+        async (e: ServiceError | null, resp: RefreshAccessTokenResponse) => {
+          if (e) {
+            return reject(e);
+          }
 
-        if (!AuthProvider.isValidToken(resp.accessToken)) {
-          throw `received invalid access token ${resp.accessToken}`;
-        }
-        callback(
-          new Jwt(
+          if (!AuthProvider.isValidToken(resp.accessToken)) {
+            return reject(`received invalid access token ${resp.accessToken}`);
+          }
+          this.accessToken = new Jwt(
             resp.accessToken?.value || '',
             unixTimestampFromDate(resp.accessToken?.expiresAtUtc || new Date())
-          )
-        );
-      }
-    );
+          );
+          resolve();
+        }
+      );
+    });
   }
 
-  // Creates an AuthService object, and asynchronously performs full authentication flow.
+  // Creates an AuthProvider object, and asynchronously performs full authentication flow.
   public static async create(
     client: AuthServiceClient,
     authKeypair: Keypair
