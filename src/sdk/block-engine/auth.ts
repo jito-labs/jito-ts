@@ -8,8 +8,8 @@ import {
   ServiceError,
 } from '@grpc/grpc-js';
 
-import { Keypair } from '@solana/web3.js';
-import { NextCall } from '@grpc/grpc-js/build/src/client-interceptors';
+import {Keypair} from '@solana/web3.js';
+import {NextCall} from '@grpc/grpc-js/build/src/client-interceptors';
 
 import {
   AuthServiceClient,
@@ -22,7 +22,7 @@ import {
   Role,
   Token,
 } from '../../gen/block-engine/auth';
-import { unixTimestampFromDate } from './utils';
+import {unixTimestampFromDate} from './utils';
 
 // Intercepts requests and sets the auth header.
 export const authInterceptor = (authProvider: AuthProvider): Interceptor => {
