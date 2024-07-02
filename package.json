@@ -12,6 +12,7 @@
     "@noble/ed25519": "^1.7.1",
     "@solana/web3.js": "~1.77.3",
     "agentkeepalive": "^4.3.0",
+    "bs58": "^6.0.0",
     "dotenv": "^16.0.3",
     "jayson": "^4.0.0",
     "node-fetch": "^2.6.7",
