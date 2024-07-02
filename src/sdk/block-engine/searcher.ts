@@ -109,7 +109,9 @@ export class SearcherClient {
   }> {
     return new Promise((resolve, reject) => {
       this.client.getNextScheduledLeader(
-        {},
+        {
+          regions: []
+        },
         async (e: ServiceError | null, resp: NextScheduledLeaderResponse) => {
           if (e) {
             reject(e);
