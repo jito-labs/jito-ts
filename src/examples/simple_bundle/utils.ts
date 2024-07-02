@@ -6,6 +6,7 @@ import {
   TransactionMessage,
   VersionedTransaction,
 } from '@solana/web3.js';
+import bs58 from 'bs58';
 
 import {SearcherClient} from '../../sdk/block-engine/searcher';
 import {Bundle} from '../../sdk/block-engine/types';
@@ -13,10 +14,8 @@ import {isError} from '../../sdk/block-engine/utils';
 
 const MEMO_PROGRAM_ID = 'Memo1UhkJRfHyvLMcVucJwxXeuD728EqVDDwQDxFMNo';
 
-export const onAccountUpdates = async (
+export const sendBundles = async (
   c: SearcherClient,
-  accounts: PublicKey[],
-  regions: string[],
   bundleTransactionLimit: number,
   keypair: Keypair,
   conn: Connection
@@ -24,51 +23,53 @@ export const onAccountUpdates = async (
   const _tipAccount = (await c.getTipAccounts())[0];
   console.log('tip account:', _tipAccount);
   const tipAccount = new PublicKey(_tipAccount);
-  c.onAccountUpdate(
-    accounts,
-    regions,
-    async (transactions: VersionedTransaction[]) => {
-      console.log(`received ${transactions.length} transactions`);
 
-      const resp = await conn.getLatestBlockhash('processed');
+  const balance = await conn.getBalance(keypair.publicKey);
+  console.log('current account has balance: ', balance);
 
-      const bundles = transactions.map(tx => {
-        const b = new Bundle([tx], bundleTransactionLimit);
+  let isLeaderSlot = false;
+  while (!isLeaderSlot) {
+    const next_leader = await c.getNextScheduledLeader();
+    const num_slots = next_leader.nextLeaderSlot - next_leader.currentSlot;
+    isLeaderSlot = num_slots <= 2;
+    console.log(`next jito leader slot in ${num_slots} slots`);
+    await new Promise(r => setTimeout(r, 500));
+  }
 
-        let maybeBundle = b.addTransactions(
-          buildMemoTransaction(keypair, resp.blockhash)
-        );
-        if (isError(maybeBundle)) {
-          throw maybeBundle;
-        }
+  const blockHash = await conn.getLatestBlockhash();
+  const b = new Bundle([], bundleTransactionLimit);
 
-        maybeBundle = maybeBundle.addTipTx(
-          keypair,
-          100_000_000,
-          tipAccount,
-          resp.blockhash
-        );
+  console.log(blockHash.blockhash);
 
-        if (isError(maybeBundle)) {
-          throw maybeBundle;
-        }
+  const bundles = [b];
 
-        return maybeBundle;
-      });
-
-      bundles.map(async b => {
-        try {
-          const resp = await c.sendBundle(b);
-          console.log('resp:', resp);
-        } catch (e) {
-          console.error('error sending bundle:', e);
-        }
-      });
-    },
-    (e: Error) => {
-      throw e;
-    }
+  let maybeBundle = b.addTransactions(
+    buildMemoTransaction(keypair, 'jito test 1', blockHash.blockhash),
+    buildMemoTransaction(keypair, 'jito test 2', blockHash.blockhash)
   );
+  if (isError(maybeBundle)) {
+    throw maybeBundle;
+  }
+
+  maybeBundle = maybeBundle.addTipTx(
+    keypair,
+    100_000,
+    tipAccount,
+    blockHash.blockhash
+  );
+
+  if (isError(maybeBundle)) {
+    throw maybeBundle;
+  }
+
+  bundles.map(async b => {
+    try {
+      const resp = await c.sendBundle(b);
+      console.log('resp:', resp);
+    } catch (e) {
+      console.error('error sending bundle:', e);
+    }
+  });
 };
 
 export const onBundleResult = (c: SearcherClient) => {
@@ -84,6 +85,7 @@ export const onBundleResult = (c: SearcherClient) => {
 
 const buildMemoTransaction = (
   keypair: Keypair,
+  message: string,
   recentBlockhash: string
 ): VersionedTransaction => {
   const ix = new TransactionInstruction({
@@ -95,7 +97,7 @@ const buildMemoTransaction = (
       },
     ],
     programId: new PublicKey(MEMO_PROGRAM_ID),
-    data: Buffer.from('Jito Backrun'),
+    data: Buffer.from(message),
   });
 
   const instructions = [ix];
@@ -110,5 +112,6 @@ const buildMemoTransaction = (
 
   tx.sign([keypair]);
 
+  console.log('txn signature is: ', bs58.encode(tx.signatures[0]));
   return tx;
 };

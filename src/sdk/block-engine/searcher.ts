@@ -1,4 +1,4 @@
-import {Keypair, PublicKey, VersionedTransaction} from '@solana/web3.js';
+import {Keypair} from '@solana/web3.js';
 import {
   ChannelCredentials,
   ChannelOptions,
@@ -12,7 +12,6 @@ import {
   ConnectedLeadersResponse,
   GetTipAccountsResponse,
   NextScheduledLeaderResponse,
-  PendingTxNotification,
   SearcherServiceClient,
   SendBundleRequest,
   SendBundleResponse,
@@ -20,7 +19,6 @@ import {
 } from '../../gen/block-engine/searcher';
 import {authInterceptor, AuthProvider} from './auth';
 import {Bundle} from './types';
-import {deserializeTransactions} from './utils';
 
 export class SearcherClient {
   private client: SearcherServiceClient;
@@ -111,7 +109,9 @@ export class SearcherClient {
   }> {
     return new Promise((resolve, reject) => {
       this.client.getNextScheduledLeader(
-        {},
+        {
+          regions: [],
+        },
         async (e: ServiceError | null, resp: NextScheduledLeaderResponse) => {
           if (e) {
             reject(e);
@@ -121,152 +121,6 @@ export class SearcherClient {
         }
       );
     });
-  }
-
-  /**
-   * Triggers the provided callback on account updates owned by the provided list of programs.
-   *
-   * @param programs - An array of program PublicKeys
-   * @param successCallback - A callback function that receives the updated transactions (VersionedTransaction[])
-   * @param errorCallback - A callback function that receives the stream error (Error)
-   * @returns A function to cancel the subscription
-   */
-  onProgramUpdate(
-    programs: PublicKey[],
-    regions: string[],
-    successCallback: (transactions: VersionedTransaction[]) => void,
-    errorCallback: (e: Error) => void
-  ): () => void {
-    const stream: ClientReadableStream<PendingTxNotification> =
-      this.client.subscribeMempool({
-        programV0Sub: {
-          programs: programs.map(p => p.toString()),
-        },
-        regions,
-      });
-
-    stream.on('readable', () => {
-      const msg = stream.read(1);
-      if (msg) {
-        successCallback(deserializeTransactions(msg.transactions));
-      }
-    });
-    stream.on('error', e => {
-      errorCallback(new Error(`Stream error: ${e.message}`));
-    });
-
-    return stream.cancel;
-  }
-
-  /**
-   * Yields on account updates owned by the provided list of programs.
-   *
-   * @param programs - An array of program PublicKeys
-   * @param onError - A callback function that receives the stream error (Error)
-   * @returns An async generator that yields transactions (VersionedTransaction[]) that use the provided programs
-   */
-  async *programUpdates(
-    programs: PublicKey[],
-    regions: string[],
-    onError: (e: Error) => void
-  ): AsyncGenerator<VersionedTransaction[]> {
-    const stream: ClientReadableStream<PendingTxNotification> =
-      this.client.subscribeMempool({
-        programV0Sub: {
-          programs: programs.map(p => p.toString()),
-        },
-        regions,
-      });
-
-    stream.on('error', e => {
-      onError(e);
-    });
-
-    for await (const pendingTxNotification of stream) {
-      try {
-        yield deserializeTransactions(pendingTxNotification.transactions);
-      } catch (e) {
-        console.log('Deserialization error: ', e);
-        if (e instanceof Error) {
-          onError(e);
-        } else {
-          onError(new Error('Deserialization error'));
-        }
-      }
-    }
-  }
-
-  /**
-   * Triggers the provided callback on updates to the provided accounts.
-   *
-   * @param accounts - An array of account PublicKeys
-   * @param successCallback - A callback function that receives the updated transactions (VersionedTransaction[])
-   * @param errorCallback - A callback function that receives the stream error (Error)
-   * @returns A function to cancel the subscription
-   */
-  onAccountUpdate(
-    accounts: PublicKey[],
-    regions: string[],
-    successCallback: (transactions: VersionedTransaction[]) => void,
-    errorCallback: (e: Error) => void
-  ): () => void {
-    const stream: ClientReadableStream<PendingTxNotification> =
-      this.client.subscribeMempool({
-        wlaV0Sub: {
-          accounts: accounts.map(a => a.toString()),
-        },
-        regions,
-      });
-
-    stream.on('readable', () => {
-      const msg = stream.read(1);
-      if (msg) {
-        successCallback(deserializeTransactions(msg.transactions));
-      }
-    });
-    stream.on('error', e => {
-      errorCallback(new Error(`Stream error: ${e.message}`));
-    });
-
-    return stream.cancel;
-  }
-
-  /**
-   * Yields on updates to the provided accounts.
-   *
-   * @param accounts - An array of account PublicKeys
-   * @param onError - A callback function that receives the stream error (Error)
-   * @returns An async generator that yields updated transactions (VersionedTransaction[]) on account updates
-   */
-  async *accountUpdates(
-    accounts: PublicKey[],
-    regions: string[],
-    onError: (e: Error) => void
-  ): AsyncGenerator<VersionedTransaction[]> {
-    const stream: ClientReadableStream<PendingTxNotification> =
-      this.client.subscribeMempool({
-        wlaV0Sub: {
-          accounts: accounts.map(a => a.toString()),
-        },
-        regions,
-      });
-
-    stream.on('error', e => {
-      onError(e);
-    });
-
-    for await (const pendingTxNotification of stream) {
-      try {
-        yield deserializeTransactions(pendingTxNotification.transactions);
-      } catch (e) {
-        console.log('Deserialization error: ', e);
-        if (e instanceof Error) {
-          onError(e);
-        } else {
-          onError(new Error('Deserialization error'));
-        }
-      }
-    }
   }
 
   /**

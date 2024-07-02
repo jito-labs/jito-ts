@@ -7,10 +7,12 @@
   "types": "dist/index.d.ts",
   "prepublish": "tsc",
   "dependencies": {
+    "@types/bs58": "^4.0.4",
     "@grpc/grpc-js": "^1.8.13",
     "@noble/ed25519": "^1.7.1",
     "@solana/web3.js": "~1.77.3",
     "agentkeepalive": "^4.3.0",
+    "bs58": "^6.0.0",
     "dotenv": "^16.0.3",
     "jayson": "^4.0.0",
     "node-fetch": "^2.6.7",
@@ -37,7 +39,7 @@
     "prepare": "yarn run compile",
     "pretest": "yarn run compile",
     "posttest": "yarn run lint",
-    "run:backrun": "yarn tsc && node dist/examples/backrun/index",
-    "run:geyser": "yarn tsc && node dist/examples/geyser/index"
+    "run:geyser": "yarn tsc && node dist/examples/geyser/index",
+    "run:simple_bundle": "yarn tsc && node dist/examples/simple_bundle/index"
   }
 }
