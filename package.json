@@ -37,7 +37,6 @@
     "prepare": "yarn run compile",
     "pretest": "yarn run compile",
     "posttest": "yarn run lint",
-    "run:backrun": "yarn tsc && node dist/examples/backrun/index",
     "run:geyser": "yarn tsc && node dist/examples/geyser/index"
   }
 }
