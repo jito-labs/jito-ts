@@ -16,8 +16,6 @@ import {
 import Long from "long";
 import _m0 from "protobufjs/minimal";
 import { Bundle, BundleResult } from "./bundle";
-import { Timestamp } from "./google/protobuf/timestamp";
-import { Packet } from "./packet";
 
 export const protobufPackage = "searcher";
 
@@ -44,61 +42,20 @@ export interface SendBundleResponse {
   uuid: string;
 }
 
-export interface ProgramSubscriptionV0 {
-  /** Base58 encoded program id that transactions mention */
-  programs: string[];
-}
-
-export interface WriteLockedAccountSubscriptionV0 {
-  /** Base58 encoded account pubkey that transactions mention */
-  accounts: string[];
-}
-
-export interface MempoolSubscription {
-  programV0Sub?:
-    | ProgramSubscriptionV0
-    | undefined;
-  /** / field numbers upto (and incl) 9 are reserved */
-  wlaV0Sub?:
-    | WriteLockedAccountSubscriptionV0
-    | undefined;
-  /**
-   * Filters transactions to originate from specified regions.
-   * Defaults to the currently connected region.
-   */
-  regions: string[];
-}
-
-export interface PendingTxSubscriptionRequest {
-  /**
-   * list of accounts to subscribe to
-   * NOTE: the block-engine will only forward transactions that write lock the provided accounts here.
-   */
-  accounts: string[];
-}
-
-export interface PendingTxNotification {
-  /** server-side timestamp the transactions were generated at (for debugging/profiling purposes) */
-  serverSideTs:
-    | Date
-    | undefined;
-  /** expiration time of the packet */
-  expirationTime:
-    | Date
-    | undefined;
-  /** list of pending transactions */
-  transactions: Packet[];
-}
-
 export interface NextScheduledLeaderRequest {
+  /** Defaults to the currently connected region if no region provided. */
+  regions: string[];
 }
 
 export interface NextScheduledLeaderResponse {
   /** the current slot the backend is on */
   currentSlot: number;
-  /** the slot and identity of the next leader */
+  /** the slot of the next leader */
   nextLeaderSlot: number;
+  /** the identity pubkey (base58) of the next leader */
   nextLeaderIdentity: string;
+  /** the block engine region of the next leader */
+  nextLeaderRegion: string;
 }
 
 export interface ConnectedLeadersRequest {
@@ -455,337 +412,15 @@ export const SendBundleResponse = {
   },
 };
 
-function createBaseProgramSubscriptionV0(): ProgramSubscriptionV0 {
-  return { programs: [] };
-}
-
-export const ProgramSubscriptionV0 = {
-  encode(message: ProgramSubscriptionV0, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-    for (const v of message.programs) {
-      writer.uint32(10).string(v!);
-    }
-    return writer;
-  },
-
-  decode(input: _m0.Reader | Uint8Array, length?: number): ProgramSubscriptionV0 {
-    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
-    let end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseProgramSubscriptionV0();
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1:
-          message.programs.push(reader.string());
-          break;
-        default:
-          reader.skipType(tag & 7);
-          break;
-      }
-    }
-    return message;
-  },
-
-  fromJSON(object: any): ProgramSubscriptionV0 {
-    return { programs: Array.isArray(object?.programs) ? object.programs.map((e: any) => String(e)) : [] };
-  },
-
-  toJSON(message: ProgramSubscriptionV0): unknown {
-    const obj: any = {};
-    if (message.programs) {
-      obj.programs = message.programs.map((e) => e);
-    } else {
-      obj.programs = [];
-    }
-    return obj;
-  },
-
-  create<I extends Exact<DeepPartial<ProgramSubscriptionV0>, I>>(base?: I): ProgramSubscriptionV0 {
-    return ProgramSubscriptionV0.fromPartial(base ?? {});
-  },
-
-  fromPartial<I extends Exact<DeepPartial<ProgramSubscriptionV0>, I>>(object: I): ProgramSubscriptionV0 {
-    const message = createBaseProgramSubscriptionV0();
-    message.programs = object.programs?.map((e) => e) || [];
-    return message;
-  },
-};
-
-function createBaseWriteLockedAccountSubscriptionV0(): WriteLockedAccountSubscriptionV0 {
-  return { accounts: [] };
-}
-
-export const WriteLockedAccountSubscriptionV0 = {
-  encode(message: WriteLockedAccountSubscriptionV0, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-    for (const v of message.accounts) {
-      writer.uint32(10).string(v!);
-    }
-    return writer;
-  },
-
-  decode(input: _m0.Reader | Uint8Array, length?: number): WriteLockedAccountSubscriptionV0 {
-    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
-    let end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseWriteLockedAccountSubscriptionV0();
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1:
-          message.accounts.push(reader.string());
-          break;
-        default:
-          reader.skipType(tag & 7);
-          break;
-      }
-    }
-    return message;
-  },
-
-  fromJSON(object: any): WriteLockedAccountSubscriptionV0 {
-    return { accounts: Array.isArray(object?.accounts) ? object.accounts.map((e: any) => String(e)) : [] };
-  },
-
-  toJSON(message: WriteLockedAccountSubscriptionV0): unknown {
-    const obj: any = {};
-    if (message.accounts) {
-      obj.accounts = message.accounts.map((e) => e);
-    } else {
-      obj.accounts = [];
-    }
-    return obj;
-  },
-
-  create<I extends Exact<DeepPartial<WriteLockedAccountSubscriptionV0>, I>>(
-    base?: I,
-  ): WriteLockedAccountSubscriptionV0 {
-    return WriteLockedAccountSubscriptionV0.fromPartial(base ?? {});
-  },
-
-  fromPartial<I extends Exact<DeepPartial<WriteLockedAccountSubscriptionV0>, I>>(
-    object: I,
-  ): WriteLockedAccountSubscriptionV0 {
-    const message = createBaseWriteLockedAccountSubscriptionV0();
-    message.accounts = object.accounts?.map((e) => e) || [];
-    return message;
-  },
-};
-
-function createBaseMempoolSubscription(): MempoolSubscription {
-  return { programV0Sub: undefined, wlaV0Sub: undefined, regions: [] };
-}
-
-export const MempoolSubscription = {
-  encode(message: MempoolSubscription, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-    if (message.programV0Sub !== undefined) {
-      ProgramSubscriptionV0.encode(message.programV0Sub, writer.uint32(10).fork()).ldelim();
-    }
-    if (message.wlaV0Sub !== undefined) {
-      WriteLockedAccountSubscriptionV0.encode(message.wlaV0Sub, writer.uint32(18).fork()).ldelim();
-    }
-    for (const v of message.regions) {
-      writer.uint32(82).string(v!);
-    }
-    return writer;
-  },
-
-  decode(input: _m0.Reader | Uint8Array, length?: number): MempoolSubscription {
-    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
-    let end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseMempoolSubscription();
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1:
-          message.programV0Sub = ProgramSubscriptionV0.decode(reader, reader.uint32());
-          break;
-        case 2:
-          message.wlaV0Sub = WriteLockedAccountSubscriptionV0.decode(reader, reader.uint32());
-          break;
-        case 10:
-          message.regions.push(reader.string());
-          break;
-        default:
-          reader.skipType(tag & 7);
-          break;
-      }
-    }
-    return message;
-  },
-
-  fromJSON(object: any): MempoolSubscription {
-    return {
-      programV0Sub: isSet(object.programV0Sub) ? ProgramSubscriptionV0.fromJSON(object.programV0Sub) : undefined,
-      wlaV0Sub: isSet(object.wlaV0Sub) ? WriteLockedAccountSubscriptionV0.fromJSON(object.wlaV0Sub) : undefined,
-      regions: Array.isArray(object?.regions) ? object.regions.map((e: any) => String(e)) : [],
-    };
-  },
-
-  toJSON(message: MempoolSubscription): unknown {
-    const obj: any = {};
-    message.programV0Sub !== undefined &&
-      (obj.programV0Sub = message.programV0Sub ? ProgramSubscriptionV0.toJSON(message.programV0Sub) : undefined);
-    message.wlaV0Sub !== undefined &&
-      (obj.wlaV0Sub = message.wlaV0Sub ? WriteLockedAccountSubscriptionV0.toJSON(message.wlaV0Sub) : undefined);
-    if (message.regions) {
-      obj.regions = message.regions.map((e) => e);
-    } else {
-      obj.regions = [];
-    }
-    return obj;
-  },
-
-  create<I extends Exact<DeepPartial<MempoolSubscription>, I>>(base?: I): MempoolSubscription {
-    return MempoolSubscription.fromPartial(base ?? {});
-  },
-
-  fromPartial<I extends Exact<DeepPartial<MempoolSubscription>, I>>(object: I): MempoolSubscription {
-    const message = createBaseMempoolSubscription();
-    message.programV0Sub = (object.programV0Sub !== undefined && object.programV0Sub !== null)
-      ? ProgramSubscriptionV0.fromPartial(object.programV0Sub)
-      : undefined;
-    message.wlaV0Sub = (object.wlaV0Sub !== undefined && object.wlaV0Sub !== null)
-      ? WriteLockedAccountSubscriptionV0.fromPartial(object.wlaV0Sub)
-      : undefined;
-    message.regions = object.regions?.map((e) => e) || [];
-    return message;
-  },
-};
-
-function createBasePendingTxSubscriptionRequest(): PendingTxSubscriptionRequest {
-  return { accounts: [] };
-}
-
-export const PendingTxSubscriptionRequest = {
-  encode(message: PendingTxSubscriptionRequest, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-    for (const v of message.accounts) {
-      writer.uint32(10).string(v!);
-    }
-    return writer;
-  },
-
-  decode(input: _m0.Reader | Uint8Array, length?: number): PendingTxSubscriptionRequest {
-    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
-    let end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBasePendingTxSubscriptionRequest();
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1:
-          message.accounts.push(reader.string());
-          break;
-        default:
-          reader.skipType(tag & 7);
-          break;
-      }
-    }
-    return message;
-  },
-
-  fromJSON(object: any): PendingTxSubscriptionRequest {
-    return { accounts: Array.isArray(object?.accounts) ? object.accounts.map((e: any) => String(e)) : [] };
-  },
-
-  toJSON(message: PendingTxSubscriptionRequest): unknown {
-    const obj: any = {};
-    if (message.accounts) {
-      obj.accounts = message.accounts.map((e) => e);
-    } else {
-      obj.accounts = [];
-    }
-    return obj;
-  },
-
-  create<I extends Exact<DeepPartial<PendingTxSubscriptionRequest>, I>>(base?: I): PendingTxSubscriptionRequest {
-    return PendingTxSubscriptionRequest.fromPartial(base ?? {});
-  },
-
-  fromPartial<I extends Exact<DeepPartial<PendingTxSubscriptionRequest>, I>>(object: I): PendingTxSubscriptionRequest {
-    const message = createBasePendingTxSubscriptionRequest();
-    message.accounts = object.accounts?.map((e) => e) || [];
-    return message;
-  },
-};
-
-function createBasePendingTxNotification(): PendingTxNotification {
-  return { serverSideTs: undefined, expirationTime: undefined, transactions: [] };
-}
-
-export const PendingTxNotification = {
-  encode(message: PendingTxNotification, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-    if (message.serverSideTs !== undefined) {
-      Timestamp.encode(toTimestamp(message.serverSideTs), writer.uint32(10).fork()).ldelim();
-    }
-    if (message.expirationTime !== undefined) {
-      Timestamp.encode(toTimestamp(message.expirationTime), writer.uint32(18).fork()).ldelim();
-    }
-    for (const v of message.transactions) {
-      Packet.encode(v!, writer.uint32(26).fork()).ldelim();
-    }
-    return writer;
-  },
-
-  decode(input: _m0.Reader | Uint8Array, length?: number): PendingTxNotification {
-    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
-    let end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBasePendingTxNotification();
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1:
-          message.serverSideTs = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
-          break;
-        case 2:
-          message.expirationTime = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
-          break;
-        case 3:
-          message.transactions.push(Packet.decode(reader, reader.uint32()));
-          break;
-        default:
-          reader.skipType(tag & 7);
-          break;
-      }
-    }
-    return message;
-  },
-
-  fromJSON(object: any): PendingTxNotification {
-    return {
-      serverSideTs: isSet(object.serverSideTs) ? fromJsonTimestamp(object.serverSideTs) : undefined,
-      expirationTime: isSet(object.expirationTime) ? fromJsonTimestamp(object.expirationTime) : undefined,
-      transactions: Array.isArray(object?.transactions) ? object.transactions.map((e: any) => Packet.fromJSON(e)) : [],
-    };
-  },
-
-  toJSON(message: PendingTxNotification): unknown {
-    const obj: any = {};
-    message.serverSideTs !== undefined && (obj.serverSideTs = message.serverSideTs.toISOString());
-    message.expirationTime !== undefined && (obj.expirationTime = message.expirationTime.toISOString());
-    if (message.transactions) {
-      obj.transactions = message.transactions.map((e) => e ? Packet.toJSON(e) : undefined);
-    } else {
-      obj.transactions = [];
-    }
-    return obj;
-  },
-
-  create<I extends Exact<DeepPartial<PendingTxNotification>, I>>(base?: I): PendingTxNotification {
-    return PendingTxNotification.fromPartial(base ?? {});
-  },
-
-  fromPartial<I extends Exact<DeepPartial<PendingTxNotification>, I>>(object: I): PendingTxNotification {
-    const message = createBasePendingTxNotification();
-    message.serverSideTs = object.serverSideTs ?? undefined;
-    message.expirationTime = object.expirationTime ?? undefined;
-    message.transactions = object.transactions?.map((e) => Packet.fromPartial(e)) || [];
-    return message;
-  },
-};
-
 function createBaseNextScheduledLeaderRequest(): NextScheduledLeaderRequest {
-  return {};
+  return { regions: [] };
 }
 
 export const NextScheduledLeaderRequest = {
-  encode(_: NextScheduledLeaderRequest, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+  encode(message: NextScheduledLeaderRequest, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    for (const v of message.regions) {
+      writer.uint32(10).string(v!);
+    }
     return writer;
   },
 
@@ -796,6 +431,9 @@ export const NextScheduledLeaderRequest = {
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
+        case 1:
+          message.regions.push(reader.string());
+          break;
         default:
           reader.skipType(tag & 7);
           break;
@@ -804,12 +442,17 @@ export const NextScheduledLeaderRequest = {
     return message;
   },
 
-  fromJSON(_: any): NextScheduledLeaderRequest {
-    return {};
+  fromJSON(object: any): NextScheduledLeaderRequest {
+    return { regions: Array.isArray(object?.regions) ? object.regions.map((e: any) => String(e)) : [] };
   },
 
-  toJSON(_: NextScheduledLeaderRequest): unknown {
+  toJSON(message: NextScheduledLeaderRequest): unknown {
     const obj: any = {};
+    if (message.regions) {
+      obj.regions = message.regions.map((e) => e);
+    } else {
+      obj.regions = [];
+    }
     return obj;
   },
 
@@ -817,14 +460,15 @@ export const NextScheduledLeaderRequest = {
     return NextScheduledLeaderRequest.fromPartial(base ?? {});
   },
 
-  fromPartial<I extends Exact<DeepPartial<NextScheduledLeaderRequest>, I>>(_: I): NextScheduledLeaderRequest {
+  fromPartial<I extends Exact<DeepPartial<NextScheduledLeaderRequest>, I>>(object: I): NextScheduledLeaderRequest {
     const message = createBaseNextScheduledLeaderRequest();
+    message.regions = object.regions?.map((e) => e) || [];
     return message;
   },
 };
 
 function createBaseNextScheduledLeaderResponse(): NextScheduledLeaderResponse {
-  return { currentSlot: 0, nextLeaderSlot: 0, nextLeaderIdentity: "" };
+  return { currentSlot: 0, nextLeaderSlot: 0, nextLeaderIdentity: "", nextLeaderRegion: "" };
 }
 
 export const NextScheduledLeaderResponse = {
@@ -837,6 +481,9 @@ export const NextScheduledLeaderResponse = {
     }
     if (message.nextLeaderIdentity !== "") {
       writer.uint32(26).string(message.nextLeaderIdentity);
+    }
+    if (message.nextLeaderRegion !== "") {
+      writer.uint32(34).string(message.nextLeaderRegion);
     }
     return writer;
   },
@@ -857,6 +504,9 @@ export const NextScheduledLeaderResponse = {
         case 3:
           message.nextLeaderIdentity = reader.string();
           break;
+        case 4:
+          message.nextLeaderRegion = reader.string();
+          break;
         default:
           reader.skipType(tag & 7);
           break;
@@ -870,6 +520,7 @@ export const NextScheduledLeaderResponse = {
       currentSlot: isSet(object.currentSlot) ? Number(object.currentSlot) : 0,
       nextLeaderSlot: isSet(object.nextLeaderSlot) ? Number(object.nextLeaderSlot) : 0,
       nextLeaderIdentity: isSet(object.nextLeaderIdentity) ? String(object.nextLeaderIdentity) : "",
+      nextLeaderRegion: isSet(object.nextLeaderRegion) ? String(object.nextLeaderRegion) : "",
     };
   },
 
@@ -878,6 +529,7 @@ export const NextScheduledLeaderResponse = {
     message.currentSlot !== undefined && (obj.currentSlot = Math.round(message.currentSlot));
     message.nextLeaderSlot !== undefined && (obj.nextLeaderSlot = Math.round(message.nextLeaderSlot));
     message.nextLeaderIdentity !== undefined && (obj.nextLeaderIdentity = message.nextLeaderIdentity);
+    message.nextLeaderRegion !== undefined && (obj.nextLeaderRegion = message.nextLeaderRegion);
     return obj;
   },
 
@@ -890,6 +542,7 @@ export const NextScheduledLeaderResponse = {
     message.currentSlot = object.currentSlot ?? 0;
     message.nextLeaderSlot = object.nextLeaderSlot ?? 0;
     message.nextLeaderIdentity = object.nextLeaderIdentity ?? "";
+    message.nextLeaderRegion = object.nextLeaderRegion ?? "";
     return message;
   },
 };
@@ -1417,31 +1070,6 @@ export const SearcherServiceService = {
     responseSerialize: (value: BundleResult) => Buffer.from(BundleResult.encode(value).finish()),
     responseDeserialize: (value: Buffer) => BundleResult.decode(value),
   },
-  /**
-   * RPC endpoint to subscribe to pending transactions. Clients can provide a list of base58 encoded accounts.
-   * Any transactions that write-lock the provided accounts will be streamed to the searcher.
-   * NOTE: DEPRECATED SOON!!!
-   */
-  subscribePendingTransactions: {
-    path: "/searcher.SearcherService/SubscribePendingTransactions",
-    requestStream: false,
-    responseStream: true,
-    requestSerialize: (value: PendingTxSubscriptionRequest) =>
-      Buffer.from(PendingTxSubscriptionRequest.encode(value).finish()),
-    requestDeserialize: (value: Buffer) => PendingTxSubscriptionRequest.decode(value),
-    responseSerialize: (value: PendingTxNotification) => Buffer.from(PendingTxNotification.encode(value).finish()),
-    responseDeserialize: (value: Buffer) => PendingTxNotification.decode(value),
-  },
-  /** RPC endpoint to subscribe to mempool based on a few filters */
-  subscribeMempool: {
-    path: "/searcher.SearcherService/SubscribeMempool",
-    requestStream: false,
-    responseStream: true,
-    requestSerialize: (value: MempoolSubscription) => Buffer.from(MempoolSubscription.encode(value).finish()),
-    requestDeserialize: (value: Buffer) => MempoolSubscription.decode(value),
-    responseSerialize: (value: PendingTxNotification) => Buffer.from(PendingTxNotification.encode(value).finish()),
-    responseDeserialize: (value: Buffer) => PendingTxNotification.decode(value),
-  },
   sendBundle: {
     path: "/searcher.SearcherService/SendBundle",
     requestStream: false,
@@ -1514,14 +1142,6 @@ export interface SearcherServiceServer extends UntypedServiceImplementation {
    * A success result would indicate the bundle won its state auction and was submitted to the validator.
    */
   subscribeBundleResults: handleServerStreamingCall<SubscribeBundleResultsRequest, BundleResult>;
-  /**
-   * RPC endpoint to subscribe to pending transactions. Clients can provide a list of base58 encoded accounts.
-   * Any transactions that write-lock the provided accounts will be streamed to the searcher.
-   * NOTE: DEPRECATED SOON!!!
-   */
-  subscribePendingTransactions: handleServerStreamingCall<PendingTxSubscriptionRequest, PendingTxNotification>;
-  /** RPC endpoint to subscribe to mempool based on a few filters */
-  subscribeMempool: handleServerStreamingCall<MempoolSubscription, PendingTxNotification>;
   sendBundle: handleUnaryCall<SendBundleRequest, SendBundleResponse>;
   /** Returns the next scheduled leader connected to the block engine. */
   getNextScheduledLeader: handleUnaryCall<NextScheduledLeaderRequest, NextScheduledLeaderResponse>;
@@ -1549,30 +1169,6 @@ export interface SearcherServiceClient extends Client {
     metadata?: Metadata,
     options?: Partial<CallOptions>,
   ): ClientReadableStream<BundleResult>;
-  /**
-   * RPC endpoint to subscribe to pending transactions. Clients can provide a list of base58 encoded accounts.
-   * Any transactions that write-lock the provided accounts will be streamed to the searcher.
-   * NOTE: DEPRECATED SOON!!!
-   */
-  subscribePendingTransactions(
-    request: PendingTxSubscriptionRequest,
-    options?: Partial<CallOptions>,
-  ): ClientReadableStream<PendingTxNotification>;
-  subscribePendingTransactions(
-    request: PendingTxSubscriptionRequest,
-    metadata?: Metadata,
-    options?: Partial<CallOptions>,
-  ): ClientReadableStream<PendingTxNotification>;
-  /** RPC endpoint to subscribe to mempool based on a few filters */
-  subscribeMempool(
-    request: MempoolSubscription,
-    options?: Partial<CallOptions>,
-  ): ClientReadableStream<PendingTxNotification>;
-  subscribeMempool(
-    request: MempoolSubscription,
-    metadata?: Metadata,
-    options?: Partial<CallOptions>,
-  ): ClientReadableStream<PendingTxNotification>;
   sendBundle(
     request: SendBundleRequest,
     callback: (error: ServiceError | null, response: SendBundleResponse) => void,
@@ -1707,28 +1303,6 @@ export type DeepPartial<T> = T extends Builtin ? T
 type KeysOfUnion<T> = T extends T ? keyof T : never;
 export type Exact<P, I extends P> = P extends Builtin ? P
   : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
-
-function toTimestamp(date: Date): Timestamp {
-  const seconds = date.getTime() / 1_000;
-  const nanos = (date.getTime() % 1_000) * 1_000_000;
-  return { seconds, nanos };
-}
-
-function fromTimestamp(t: Timestamp): Date {
-  let millis = t.seconds * 1_000;
-  millis += t.nanos / 1_000_000;
-  return new Date(millis);
-}
-
-function fromJsonTimestamp(o: any): Date {
-  if (o instanceof Date) {
-    return o;
-  } else if (typeof o === "string") {
-    return new Date(o);
-  } else {
-    return fromTimestamp(Timestamp.fromJSON(o));
-  }
-}
 
 function longToNumber(long: Long): number {
   if (long.gt(Number.MAX_SAFE_INTEGER)) {

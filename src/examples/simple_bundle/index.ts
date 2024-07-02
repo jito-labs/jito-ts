@@ -1,10 +1,11 @@
 require('dotenv').config();
 
-import {Keypair, Connection, PublicKey} from '@solana/web3.js';
 import * as Fs from 'fs';
 
+import {Keypair, Connection} from '@solana/web3.js';
+
 import {searcherClient} from '../../sdk/block-engine/searcher';
-import {onBundleResult, onAccountUpdates} from './utils';
+import {onBundleResult, sendBundles} from './utils';
 
 const main = async () => {
   const blockEngineUrl = process.env.BLOCK_ENGINE_URL || '';
@@ -19,7 +20,7 @@ const main = async () => {
 
   const _accounts = (process.env.ACCOUNTS_OF_INTEREST || '').split(',');
   console.log('ACCOUNTS_OF_INTEREST:', _accounts);
-  const accounts = _accounts.map(a => new PublicKey(a));
+  // const accounts = _accounts.map(a => new PublicKey(a));
 
   const bundleTransactionLimit = parseInt(
     process.env.BUNDLE_TRANSACTION_LIMIT || '0'
@@ -31,20 +32,13 @@ const main = async () => {
   console.log('RPC_URL:', rpcUrl);
   const conn = new Connection(rpcUrl, 'confirmed');
 
-  await onAccountUpdates(
-    c,
-    accounts,
-    [],
-    bundleTransactionLimit,
-    keypair,
-    conn
-  );
+  await sendBundles(c, bundleTransactionLimit, keypair, conn);
   onBundleResult(c);
 };
 
 main()
   .then(() => {
-    console.log('Back running:', process.env.ACCOUNTS_OF_INTEREST);
+    console.log('Sending bundle');
   })
   .catch(e => {
     throw e;
