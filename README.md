@@ -2,6 +2,7 @@
 Welcome to the Jito Typescript SDK repository! Use this to interact with the block-engine, relayer and future Jito APIs.
 
 ## Setup
+Use with yarn `1.22`+ and Node 20.
 ```bash
 yarn
 ```
