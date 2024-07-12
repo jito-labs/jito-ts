@@ -17,6 +17,14 @@ Steps to regenerate:
 ### Geyser
 Please request access to geyser by emailing support@jito.wtf
 
+If you want to use geyser without access token on your instance of JITO Geyser, set second option to null:
+
+```
+import { geyserClient as jitoGeyserClient } from 'jito-ts';
+const client = jitoSearcherClient(url, null, gRPCOptions);
+```
+https and http now work with geyser for direct IP connection
+
 **Note:** Mac users may run into an error to the effect of "protoc-gen-js: program not found or is not executable";
 if this is thrown, run:
 * `brew install protobuf@3`
