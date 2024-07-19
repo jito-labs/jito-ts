@@ -15,7 +15,6 @@ Steps to regenerate:
 * Run the appropriate `yarn gen-* ${PATH_TO_PROTOS}` and commit!
 
 ### Geyser
-Please request access to geyser by emailing support@jito.wtf
 
 **Note:** Mac users may run into an error to the effect of "protoc-gen-js: program not found or is not executable";
 if this is thrown, run:
