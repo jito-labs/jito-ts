@@ -8,7 +8,7 @@ import {searcherClient} from '../../sdk/block-engine/searcher';
 import {onBundleResult, sendBundles} from './utils';
 
 const main = async () => {
-  const blockEngineUrl = process.env.BLOCK_ENGINE_URL || '';
+  const blockEngineUrl = (process.env.BLOCK_ENGINE_URL || '').replace(/\/$/, '');
   console.log('BLOCK_ENGINE_URL:', blockEngineUrl);
 
   const authKeypairPath = process.env.AUTH_KEYPAIR_PATH || '';
