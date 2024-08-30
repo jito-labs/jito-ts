@@ -5,15 +5,27 @@ import {PublicKey} from '@solana/web3.js';
 import {geyserClient} from '../../sdk';
 
 const main = async () => {
-  const geyserUrl = process.env.GEYSER_URL || '';
-  const geyserAccessToken = process.env.GEYSER_ACCESS_TOKEN || '';
+  const geyserUrl = process.env.GEYSER_URL || null;
+  const geyserAccessToken = process.env.GEYSER_ACCESS_TOKEN || null;
   console.log(`GEYSER_URL: ${geyserUrl}`);
 
-  const _accounts = (process.env.ACCOUNTS_OF_INTEREST || '').split(',');
-  console.log(`ACCOUNTS_OF_INTEREST: ${_accounts}`);
-  const accounts = _accounts.map(a => new PublicKey(a));
+  const _accounts = (process.env.ACCOUNTS_OF_INTEREST || '')
+    .split(',')
+    .filter(a => a !== '');
+  const _programs = (process.env.PROGRAMS_OF_INTEREST || '')
+    .split(',')
+    .filter(p => p !== '');
 
-  const _programs = (process.env.PROGRAMS_OF_INTEREST || '').split(',');
+  if (
+    !geyserUrl ||
+    !geyserAccessToken ||
+    !_accounts.length ||
+    !_programs.length
+  ) {
+    throw new Error('missing required environment variables');
+  }
+
+  const accounts = _accounts.map(a => new PublicKey(a));
   console.log(`PROGRAMS_OF_INTEREST: ${_programs}`);
   const programs = _programs.map(p => new PublicKey(p));
 
