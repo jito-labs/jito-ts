@@ -1,4 +1,7 @@
 # jito-ts
+
+![NPM Version](https://img.shields.io/npm/v/jito-ts)
+
 Welcome to the Jito Typescript SDK repository! Use this to interact with the block-engine, relayer and future Jito APIs.
 
 ## Setup
