@@ -1,5 +1,6 @@
 # jito-ts
 
+[![Discord](https://img.shields.io/discord/938287290806042626?label=Discord&logo=discord&style=flat&color=7289DA)](https://discord.gg/jTSmEzaR)
 [![NPM Version](https://img.shields.io/npm/v/jito-ts)](https://www.npmjs.com/package/jito-ts)
 
 Welcome to the Jito Typescript SDK repository! Use this to interact with the block-engine, relayer and future Jito APIs.
