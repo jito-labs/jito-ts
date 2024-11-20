@@ -15,7 +15,13 @@ jobs:
         with:
           node-version: '18'
           registry-url: 'https://registry.npmjs.org'
-      - run: npm ci
-      - run: npm publish
+      - name: Install Yarn
+        run: npm install -g yarn
+      - name: Install Dependencies
+        run: yarn install --frozen-lockfile
+      - name: Build
+        run: yarn build
+      - name: Publish
+        run: yarn publish --non-interactive
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
