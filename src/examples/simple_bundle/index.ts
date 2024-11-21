@@ -1,7 +1,6 @@
 require('dotenv').config();
 
 import * as Fs from 'fs';
-
 import {Keypair, Connection} from '@solana/web3.js';
 
 import {searcherClient} from '../../sdk/block-engine/searcher';
@@ -32,7 +31,12 @@ const main = async () => {
   console.log('RPC_URL:', rpcUrl);
   const conn = new Connection(rpcUrl, 'confirmed');
 
-  await sendBundles(c, bundleTransactionLimit, keypair, conn);
+  const result = await sendBundles(c, bundleTransactionLimit, keypair, conn);
+  if (!result.ok) {
+    console.error('Failed to send bundles:', result.error);
+    return;
+  }
+  console.log('Successfully sent bundles:', result.value);
   onBundleResult(c);
 };
 
