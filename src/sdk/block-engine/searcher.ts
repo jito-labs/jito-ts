@@ -310,6 +310,8 @@ export const searcherClient = (
   authKeypair?: Keypair,
   grpcOptions?: Partial<ChannelOptions>
 ): SearcherClient => {
+  url = url.replace(/\/$/, '');
+
   if (authKeypair) {
     const authProvider = new AuthProvider(
       new AuthServiceClient(url, ChannelCredentials.createSsl()),
