@@ -27,6 +27,7 @@ export const sendBundles = async (
   const balance = await conn.getBalance(keypair.publicKey);
   console.log('current account has balance: ', balance);
 
+  // Note: This check is not needed unless jito-solana is on less than 50% of the validators
   let isLeaderSlot = false;
   while (!isLeaderSlot) {
     const next_leader = await c.getNextScheduledLeader();
