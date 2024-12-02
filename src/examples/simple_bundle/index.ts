@@ -8,11 +8,16 @@ import {searcherClient} from '../../sdk/block-engine/searcher';
 import {onBundleResult, sendBundles} from './utils';
 
 const main = async () => {
-  const blockEngineUrl = process.env.BLOCK_ENGINE_URL || '';
+  const blockEngineUrl = process.env.BLOCK_ENGINE_URL || null;
   console.log('BLOCK_ENGINE_URL:', blockEngineUrl);
 
-  const authKeypairPath = process.env.AUTH_KEYPAIR_PATH || '';
+  const authKeypairPath = process.env.AUTH_KEYPAIR_PATH || null;
   console.log('AUTH_KEYPAIR_PATH:', authKeypairPath);
+
+  if (!blockEngineUrl || !authKeypairPath) {
+    throw new Error('missing required environment variables');
+  }
+
   const decodedKey = new Uint8Array(
     JSON.parse(Fs.readFileSync(authKeypairPath).toString()) as number[]
   );
@@ -41,5 +46,5 @@ main()
     console.log('Sending bundle');
   })
   .catch(e => {
-    throw e;
+    console.error(`error: ${e}`);
   });
