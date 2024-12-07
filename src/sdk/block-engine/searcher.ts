@@ -296,7 +296,6 @@ export class SearcherClient {
     }
   }
 }
-
 /**
  * Creates and returns a SearcherClient instance.
  *
@@ -311,7 +310,7 @@ export const searcherClient = (
   grpcOptions?: Partial<ChannelOptions>
 ): SearcherClient => {
   if (authKeypair) {
-    const authProvider = new AuthProvider(
+    const authProvider = AuthProvider.create(
       new AuthServiceClient(url, ChannelCredentials.createSsl()),
       authKeypair
     );
