@@ -62,6 +62,7 @@ export class AuthProvider {
   private accessToken: Jwt | undefined;
   private refreshToken: Jwt | undefined;
   private refreshing: Promise<void> | null = null;
+  private refreshIntervalId: NodeJS.Timeout | null = null;
 
   constructor(client: AuthServiceClient, authKeypair: Keypair) {
     this.client = client;
@@ -129,17 +130,26 @@ export class AuthProvider {
   }
 
   // Creates an AuthProvider object, and asynchronously performs full authentication flow.
-  public static async create(
+  public static create(
     client: AuthServiceClient,
     authKeypair: Keypair
-  ): Promise<AuthProvider> {
+  ): AuthProvider {
     const provider = new AuthProvider(client, authKeypair);
-    await provider.fullAuth((accessToken: Jwt, refreshToken: Jwt) => {
+    provider.fullAuth((accessToken: Jwt, refreshToken: Jwt) => {
       provider.accessToken = accessToken;
       provider.refreshToken = refreshToken;
     });
-
+    // refresh every 60s
+    provider.refreshIntervalId = setInterval(() => {
+      provider.refreshAccessToken();
+    }, 60 * 1000);
     return provider;
+  }
+
+  public destroy() {
+    if (this.refreshIntervalId) {
+      clearInterval(this.refreshIntervalId);
+    }
   }
 
   // Run entire auth flow:
