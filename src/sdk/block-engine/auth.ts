@@ -107,29 +107,45 @@ export class AuthProvider {
     });
   }
 
+  private isRefreshing = false;
+  private refreshPromise: Promise<void> | null = null;
+  
   // Refresh access token.
   private async refreshAccessToken() {
-    return new Promise<void>((resolve, reject) => {
+    if (this.isRefreshing) {
+      return this.refreshPromise;
+    }
+  
+    this.isRefreshing = true;
+    this.refreshPromise = new Promise<void>((resolve, reject) => {
       this.client.refreshAccessToken(
         {
           refreshToken: this.refreshToken?.token,
         } as RefreshAccessTokenRequest,
         async (e: ServiceError | null, resp: RefreshAccessTokenResponse) => {
           if (e) {
+            this.isRefreshing = false;
+            this.refreshPromise = null;
             return reject(e);
           }
-
+  
           if (!AuthProvider.isValidToken(resp.accessToken)) {
+            this.isRefreshing = false;
+            this.refreshPromise = null;
             return reject(`received invalid access token ${resp.accessToken}`);
           }
           this.accessToken = new Jwt(
             resp.accessToken?.value || '',
             unixTimestampFromDate(resp.accessToken?.expiresAtUtc || new Date())
           );
+          this.isRefreshing = false;
+          this.refreshPromise = null;
           resolve();
         }
       );
     });
+  
+    return this.refreshPromise;
   }
 
   // Creates an AuthProvider object, and asynchronously performs full authentication flow.
