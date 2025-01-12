@@ -66,6 +66,10 @@ export class AuthProvider {
   constructor(client: AuthServiceClient, authKeypair: Keypair) {
     this.client = client;
     this.authKeypair = authKeypair;
+    this.fullAuth((accessToken: Jwt, refreshToken: Jwt) => {
+      this.accessToken = accessToken;
+      this.refreshToken = refreshToken;
+    });
   }
 
   // Injects the current access token into the provided callback.
@@ -129,12 +133,12 @@ export class AuthProvider {
   }
 
   // Creates an AuthProvider object, and asynchronously performs full authentication flow.
-  public static async create(
+  public static create(
     client: AuthServiceClient,
     authKeypair: Keypair
-  ): Promise<AuthProvider> {
+  ): AuthProvider {
     const provider = new AuthProvider(client, authKeypair);
-    await provider.fullAuth((accessToken: Jwt, refreshToken: Jwt) => {
+    provider.fullAuth((accessToken: Jwt, refreshToken: Jwt) => {
       provider.accessToken = accessToken;
       provider.refreshToken = refreshToken;
     });
