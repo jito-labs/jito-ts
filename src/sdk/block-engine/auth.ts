@@ -61,7 +61,7 @@ export class AuthProvider {
   private readonly authKeypair: Keypair;
   private accessToken: Jwt | undefined;
   private refreshToken: Jwt | undefined;
-  private refreshing: Promise<void> | null = null;
+  private refreshing: Promise<void> | null | void = null;
 
   constructor(client: AuthServiceClient, authKeypair: Keypair) {
     this.client = client;
