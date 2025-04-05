@@ -4,9 +4,9 @@ import {
   ClientReadableStream,
   ServiceError,
 } from '@grpc/grpc-js';
-import {PublicKey} from '@solana/web3.js';
+import { PublicKey } from '@solana/web3.js';
 
-import {authInterceptor} from './auth';
+import { authInterceptor } from './auth';
 import {
   GetHeartbeatIntervalResponse,
   GeyserClient as GeyserClientStub,
@@ -58,7 +58,7 @@ export class GeyserClient {
   ): () => void {
     const accounts = accountsOfInterest.map(a => a.toBytes());
     const stream: ClientReadableStream<TimestampedAccountUpdate> =
-      this.client.subscribeAccountUpdates({accounts});
+      this.client.subscribeAccountUpdates({ accounts });
 
     stream.on('readable', () => {
       const msg = stream.read(1);
@@ -71,7 +71,7 @@ export class GeyserClient {
       errorCallback(new Error(`Stream error: ${e.message}`))
     );
 
-    return () => stream.cancel();
+    return stream.cancel;
   }
 
   /**
@@ -89,7 +89,7 @@ export class GeyserClient {
   ): () => void {
     const programs = programsOfInterest.map(a => a.toBytes());
     const stream: ClientReadableStream<TimestampedAccountUpdate> =
-      this.client.subscribeProgramUpdates({programs});
+      this.client.subscribeProgramUpdates({ programs });
 
     stream.on('readable', () => {
       const msg = stream.read(1);
@@ -102,7 +102,7 @@ export class GeyserClient {
       errorCallback(new Error(`Stream error: ${e.message}`))
     );
 
-    return () => stream.cancel();
+    return stream.cancel;
   }
 
   /**
@@ -130,7 +130,7 @@ export class GeyserClient {
       errorCallback(new Error(`Stream error: ${e.message}`))
     );
 
-    return () => stream.cancel();
+    return stream.cancel;
   }
 }
 
@@ -144,13 +144,20 @@ export class GeyserClient {
  */
 export const geyserClient = (
   url: string,
-  accessToken: string,
+  accessToken?: string,
   grpcOptions?: Partial<ChannelOptions>
 ): GeyserClient => {
-  const client = new GeyserClientStub(url, ChannelCredentials.createSsl(), {
-    interceptors: [authInterceptor(accessToken)],
-    ...grpcOptions,
-  });
+  const options: Partial<ChannelOptions> = { ...grpcOptions };
+
+  if (accessToken) {
+    options.interceptors = [authInterceptor(accessToken)];
+  }
+
+  const credentials = url.startsWith('https')
+    ? ChannelCredentials.createSsl()
+    : ChannelCredentials.createInsecure();
+
+  const client = new GeyserClientStub(url, credentials, options);
 
   return new GeyserClient(client);
 };
