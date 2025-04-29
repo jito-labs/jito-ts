@@ -43,5 +43,12 @@
     "posttest": "yarn run lint",
     "run:geyser": "yarn tsc && node dist/examples/geyser/index",
     "run:simple_bundle": "yarn tsc && node dist/examples/simple_bundle/index"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jito-labs/jito-ts.git"
+  },
+  "bugs": {
+    "url": "https://github.com/jito-labs/jito-ts/issues"
   }
 }
