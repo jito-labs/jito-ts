@@ -2,7 +2,7 @@
   "author": "Jito Team <team@jito.wtf>",
   "license": "Apache-2.0",
   "name": "jito-ts",
-  "version": "4.2.0",
+  "version": "4.2.1",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "prepublish": "tsc",

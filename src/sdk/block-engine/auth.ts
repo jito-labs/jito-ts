@@ -100,6 +100,8 @@ export class AuthProvider {
       if (this.accessToken) {
         callback(this.accessToken);
       }
+    }).catch((error) => {
+      console.error('Token refresh failed:', error);
     });
   }
 
