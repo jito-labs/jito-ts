@@ -107,19 +107,29 @@ export class AuthProvider {
 
   // Refresh access token.
   private async refreshAccessToken() {
-    return new Promise<void>((resolve, reject) => {
+    return new Promise<void>((resolve) => {
       this.client.refreshAccessToken(
         {
           refreshToken: this.refreshToken?.token,
         } as RefreshAccessTokenRequest,
         async (e: ServiceError | null, resp: RefreshAccessTokenResponse) => {
           if (e) {
-            return reject(e);
+            console.error('Token refresh failed:', e);
+            // Clear tokens to force full re-auth on next request  
+            this.accessToken = undefined;
+            this.refreshToken = undefined;
+            resolve();
+            return;
           }
 
           if (!AuthProvider.isValidToken(resp.accessToken)) {
-            return reject(`received invalid access token ${resp.accessToken}`);
+            console.error('Received invalid access token');
+            this.accessToken = undefined;
+            this.refreshToken = undefined;  
+            resolve();
+            return;
           }
+          
           this.accessToken = new Jwt(
             resp.accessToken?.value || '',
             unixTimestampFromDate(resp.accessToken?.expiresAtUtc || new Date())
