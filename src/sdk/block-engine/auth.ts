@@ -61,15 +61,18 @@ export class AuthProvider {
   private readonly authKeypair: Keypair;
   private accessToken: Jwt | undefined;
   private refreshToken: Jwt | undefined;
-  private refreshing: Promise<void> | null = null;
+  private refreshing: Promise<void | null> | null | void = null;
 
   constructor(client: AuthServiceClient, authKeypair: Keypair) {
     this.client = client;
     this.authKeypair = authKeypair;
+    this.fullAuth((accessToken: Jwt, refreshToken: Jwt) => {
+      this.accessToken = accessToken;
+      this.refreshToken = refreshToken;
+    });
   }
 
-  // Injects the current access token into the provided callback.
-  // If it's expired then refreshes, if the refresh token is expired then runs the full auth flow.
+  // If access token expired then refreshes, if the refresh token is expired then runs the full auth flow.
   public injectAccessToken(callback: (accessToken: Jwt) => void) {
     if (
       !this.accessToken ||
@@ -99,13 +102,17 @@ export class AuthProvider {
     this.refreshing.then(() => {
       if (this.accessToken) {
         callback(this.accessToken);
+      } else {
+        // Refresh failed due to auth issue - tokens were cleared
+        console.warn('Token refresh failed due to auth issue, next request will be unauthenticated');
       }
     }).catch((error) => {
-      console.error('Token refresh failed:', error);
+      // This should never happen since refreshAccessToken never rejects,
+      console.error('Unexpected error in token refresh flow:', error);
     });
   }
 
-  // Refresh access token.
+  // Refresh access token
   private async refreshAccessToken() {
     return new Promise<void>((resolve) => {
       this.client.refreshAccessToken(
@@ -115,17 +122,25 @@ export class AuthProvider {
         async (e: ServiceError | null, resp: RefreshAccessTokenResponse) => {
           if (e) {
             console.error('Token refresh failed:', e);
-            // Clear tokens to force full re-auth on next request  
+            
+            // Don't clear tokens on rate limits
+            if (e.code === 8) { // RESOURCE_EXHAUSTED (gRPC equivalent of 429)
+              console.warn('Rate limited on token refresh - keeping existing tokens');
+              resolve(); // Keep tokens, let user handle rate limit
+              return;
+            }
+            
+            // Only clear tokens for actual auth failures
             this.accessToken = undefined;
             this.refreshToken = undefined;
             resolve();
             return;
           }
-
+  
           if (!AuthProvider.isValidToken(resp.accessToken)) {
-            console.error('Received invalid access token');
+            console.error('Received invalid access token during refresh');
             this.accessToken = undefined;
-            this.refreshToken = undefined;  
+            this.refreshToken = undefined;
             resolve();
             return;
           }
@@ -141,12 +156,12 @@ export class AuthProvider {
   }
 
   // Creates an AuthProvider object, and asynchronously performs full authentication flow.
-  public static async create(
+  public static create(
     client: AuthServiceClient,
     authKeypair: Keypair
-  ): Promise<AuthProvider> {
+  ): AuthProvider {
     const provider = new AuthProvider(client, authKeypair);
-    await provider.fullAuth((accessToken: Jwt, refreshToken: Jwt) => {
+    provider.fullAuth((accessToken: Jwt, refreshToken: Jwt) => {
       provider.accessToken = accessToken;
       provider.refreshToken = refreshToken;
     });
