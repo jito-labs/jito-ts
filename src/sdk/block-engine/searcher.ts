@@ -252,11 +252,31 @@ export class SearcherClient {
     });
   }
 
+/**
+   * Checks if a gRPC error represents normal stream closure
+   */
+  private isNormalStreamClosure(error: any): boolean {
+    const message = error.message || '';
+    const code = error.code;
+    
+    // gRPC status code 13 = INTERNAL, often used for RST_STREAM
+    if (code === 13 && (
+      message.includes('RST_STREAM') ||
+      message.includes('Call ended without gRPC status')
+    )) {
+      return true;
+    }
+    
+    // Other normal closure patterns
+    return message.includes('stream ended') || 
+           message.includes('connection closed');
+  }
+
   /**
    * Triggers the provided callback on BundleResult updates.
    *
    * @param successCallback - A callback function that receives the BundleResult updates
-   * @param errorCallback - A callback function that receives the stream error (Error)
+   * @param errorCallback - A callback function that receives actual stream errors (not normal closure)
    * @returns A function to cancel the subscription
    */
   onBundleResult(
@@ -272,8 +292,22 @@ export class SearcherClient {
         successCallback(msg);
       }
     });
+    
     stream.on('error', e => {
+      // Filter out normal stream closure events
+      if (this.isNormalStreamClosure(e)) {
+        // Normal closure - don't call error callback, just log for debugging
+        console.debug('Bundle result stream closed normally');
+        return;
+      }
+      
+      // Only call error callback for actual problems
       errorCallback(new Error(`Stream error: ${e.message}`));
+    });
+
+    stream.on('end', () => {
+      // Stream ended normally - this is expected behavior
+      console.debug('Bundle result stream ended');
     });
 
     return () => stream.cancel();
