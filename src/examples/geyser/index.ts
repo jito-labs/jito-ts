@@ -2,7 +2,7 @@ require('dotenv').config();
 
 import {PublicKey} from '@solana/web3.js';
 
-import {geyserClient} from '../../sdk';
+import {geyserClient} from '../../sdk/geyser';
 
 const main = async () => {
   const geyserUrl = process.env.GEYSER_URL || '';
@@ -24,10 +24,10 @@ const main = async () => {
 
   c.onAccountUpdate(
     accounts,
-    resp => {
+    (resp: any) => {
       console.log(`received account update: ${resp.accountUpdate?.seq}`);
     },
-    e => {
+    (e: Error) => {
       console.error(`received account update error: ${e}`);
       throw e;
     }
@@ -35,20 +35,20 @@ const main = async () => {
 
   c.onProgramUpdate(
     programs,
-    resp => {
+    (resp: any) => {
       console.log(`received program update: ${resp.accountUpdate?.seq}`);
     },
-    e => {
+    (e: Error) => {
       console.error(`received program update error: ${e}`);
       throw e;
     }
   );
 
   c.onProcessedBlock(
-    resp => {
+    (resp: any) => {
       console.log(`received processed block: ${resp.blockUpdate?.slot}`);
     },
-    e => {
+    (e: Error) => {
       console.error(`block update stream error: ${e}`);
       throw e;
     }

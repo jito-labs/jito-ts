@@ -2,9 +2,16 @@
   "author": "Jito Team <team@jito.wtf>",
   "license": "Apache-2.0",
   "name": "jito-ts",
-  "version": "4.2.1",
+  "version": "4.2.2",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.js",
+      "import": "./dist/index.js"
+    }
+  },
   "prepublish": "tsc",
   "dependencies": {
     "@grpc/grpc-js": "^1.8.13",
