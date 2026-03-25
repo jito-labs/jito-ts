@@ -37,6 +37,8 @@ export class SearcherClient {
     maxDelay: number;
     factor: number;
   }>;
+  private _activeBundleResultStream: ClientReadableStream<BundleResult> | null =
+    null;
 
   constructor(client: SearcherServiceClient) {
     this.client = client;
@@ -275,6 +277,9 @@ export class SearcherClient {
   /**
    * Triggers the provided callback on BundleResult updates.
    *
+   * Automatically cancels any previously active bundle result stream to
+   * prevent connection leaks that cause RESOURCE_EXHAUSTED errors.
+   *
    * @param successCallback - A callback function that receives the BundleResult updates
    * @param errorCallback - A callback function that receives actual stream errors (not normal closure)
    * @returns A function to cancel the subscription
@@ -283,8 +288,12 @@ export class SearcherClient {
     successCallback: (bundleResult: BundleResult) => void,
     errorCallback: (e: Error) => void
   ): () => void {
+    // Cancel any existing stream to prevent connection leak (fixes #54)
+    this.close();
+
     const stream: ClientReadableStream<BundleResult> =
       this.client.subscribeBundleResults({});
+    this._activeBundleResultStream = stream;
 
     stream.on('readable', () => {
       const msg = stream.read(1);
@@ -292,29 +301,59 @@ export class SearcherClient {
         successCallback(msg);
       }
     });
-    
+
     stream.on('error', e => {
+      this._activeBundleResultStream = null;
+
       // Filter out normal stream closure events
       if (this.isNormalStreamClosure(e)) {
-        // Normal closure - don't call error callback, just log for debugging
         console.debug('Bundle result stream closed normally');
         return;
       }
-      
-      // Only call error callback for actual problems
+
       errorCallback(new Error(`Stream error: ${e.message}`));
     });
 
     stream.on('end', () => {
-      // Stream ended normally - this is expected behavior
+      this._activeBundleResultStream = null;
       console.debug('Bundle result stream ended');
     });
 
-    return () => stream.cancel();
+    return () => {
+      try {
+        stream.cancel();
+      } catch {
+        // Stream may already be closed
+      }
+      if (this._activeBundleResultStream === stream) {
+        this._activeBundleResultStream = null;
+      }
+    };
   }
 
-   /**
+  /**
+   * Closes any active bundle result stream and releases the connection.
+   *
+   * Call this before destroying the client, or when you no longer need
+   * bundle result updates. Prevents RESOURCE_EXHAUSTED errors caused by
+   * leaked gRPC streams.
+   */
+  close(): void {
+    if (this._activeBundleResultStream) {
+      try {
+        this._activeBundleResultStream.cancel();
+      } catch {
+        // Stream may already be closed
+      }
+      this._activeBundleResultStream = null;
+    }
+  }
+
+  /**
    * Yields on bundle results.
+   *
+   * Automatically cancels any previously active bundle result stream.
+   * Retries with exponential backoff on RESOURCE_EXHAUSTED errors.
    *
    * @param onError - A callback function that receives the stream error (Error)
    * @returns An async generator that yields BundleResult updates
@@ -322,16 +361,56 @@ export class SearcherClient {
   async *bundleResults(
     onError: (e: Error) => void
   ): AsyncGenerator<BundleResult> {
-    const stream: ClientReadableStream<BundleResult> =
-      this.client.subscribeBundleResults({});
+    // Cancel any existing stream (fixes #54)
+    this.close();
 
-    stream.on('error', e => {
-      onError(e);
-    });
+    let retries = 0;
+    const {maxRetries, baseDelay, maxDelay, factor} = this.retryOptions;
 
-    for await (const bundleResult of stream) {
-      yield bundleResult;
+    while (retries <= maxRetries) {
+      const stream: ClientReadableStream<BundleResult> =
+        this.client.subscribeBundleResults({});
+      this._activeBundleResultStream = stream;
+
+      try {
+        for await (const bundleResult of stream) {
+          retries = 0; // Reset on successful result
+          yield bundleResult;
+        }
+
+        // Stream ended cleanly
+        break;
+      } catch (e: any) {
+        this._activeBundleResultStream = null;
+
+        // Retry on RESOURCE_EXHAUSTED with backoff
+        if (e?.code === status.RESOURCE_EXHAUSTED && retries < maxRetries) {
+          retries++;
+          const delay = Math.min(
+            baseDelay * Math.pow(factor, retries - 1),
+            maxDelay
+          );
+          console.warn(
+            `RESOURCE_EXHAUSTED on bundle result stream. ` +
+              `Retrying in ${delay}ms (attempt ${retries}/${maxRetries})`
+          );
+          onError(
+            new Error(
+              `RESOURCE_EXHAUSTED: too many concurrent connections. ` +
+                `Retrying in ${delay}ms (attempt ${retries}/${maxRetries})`
+            )
+          );
+          await new Promise(r => setTimeout(r, delay));
+          continue;
+        }
+
+        // Non-retryable error
+        onError(e);
+        throw e;
+      }
     }
+
+    this._activeBundleResultStream = null;
   }
 }
 
