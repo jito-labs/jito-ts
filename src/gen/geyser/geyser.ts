@@ -14,7 +14,7 @@ import {
   UntypedServiceImplementation,
 } from "@grpc/grpc-js";
 import Long from "long";
-import _m0 from "protobufjs/minimal";
+import * as _m0 from "protobufjs/minimal";
 import { ConfirmedTransaction, Reward } from "./confirmed_block";
 import { Timestamp } from "./google/protobuf/timestamp";
 

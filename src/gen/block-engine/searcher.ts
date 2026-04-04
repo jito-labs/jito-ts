@@ -14,7 +14,7 @@ import {
   UntypedServiceImplementation,
 } from "@grpc/grpc-js";
 import Long from "long";
-import _m0 from "protobufjs/minimal";
+import * as _m0 from "protobufjs/minimal";
 import { Bundle, BundleResult } from "./bundle";
 
 export const protobufPackage = "searcher";
