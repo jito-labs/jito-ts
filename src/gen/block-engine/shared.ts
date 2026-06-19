@@ -1,5 +1,5 @@
 /* eslint-disable */
-import Long from "long";
+import Long = require("long");
 import * as _m0 from "protobufjs/minimal";
 import { Timestamp } from "./google/protobuf/timestamp";
 

@@ -15,7 +15,7 @@ import {
   ServiceError,
   UntypedServiceImplementation,
 } from "@grpc/grpc-js";
-import Long from "long";
+import Long = require("long");
 import * as _m0 from "protobufjs/minimal";
 import { BundleUuid } from "./bundle";
 import { PacketBatch } from "./packet";

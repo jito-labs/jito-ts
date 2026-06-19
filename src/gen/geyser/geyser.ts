@@ -13,7 +13,7 @@ import {
   ServiceError,
   UntypedServiceImplementation,
 } from "@grpc/grpc-js";
-import Long from "long";
+import Long = require("long");
 import * as _m0 from "protobufjs/minimal";
 import { ConfirmedTransaction, Reward } from "./confirmed_block";
 import { Timestamp } from "./google/protobuf/timestamp";
