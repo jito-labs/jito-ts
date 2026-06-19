@@ -41,6 +41,7 @@
     "prepare": "yarn run compile",
     "pretest": "yarn run compile",
     "posttest": "yarn run lint",
+    "check-proto-imports": "node scripts/check-proto-imports.js",
     "run:geyser": "yarn tsc && node dist/examples/geyser/index",
     "run:simple_bundle": "yarn tsc && node dist/examples/simple_bundle/index"
   }

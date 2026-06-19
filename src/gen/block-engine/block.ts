@@ -1,6 +1,6 @@
 /* eslint-disable */
-import Long from "long";
-import _m0 from "protobufjs/minimal";
+import Long = require("long");
+import * as _m0 from "protobufjs/minimal";
 import { Header } from "./shared";
 
 export const protobufPackage = "block";
