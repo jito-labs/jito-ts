@@ -109,22 +109,33 @@ export class SearcherClient {
     operation: () => Promise<Result<T, SearcherClientError>>,
     retries = 0
   ): Promise<Result<T, SearcherClientError>> {
+    // `operation` resolves with an Err(...) result rather than rejecting on
+    // gRPC errors, so a bare try/catch never observes a failure here. Catch
+    // is kept as a safety net for anything that does throw, but the retry
+    // decision has to be based on the resolved Result as well.
+    let result: Result<T, SearcherClientError>;
     try {
-      return await operation();
+      result = await operation();
     } catch (error) {
-      if (retries >= this.retryOptions.maxRetries || !this.isRetryableError(error)) {
-        return Err(error as SearcherClientError);
-      }
-
-      const delay = Math.min(
-        this.retryOptions.baseDelay * Math.pow(this.retryOptions.factor, retries),
-        this.retryOptions.maxDelay
-      );
-      console.warn(`Operation failed. Retrying in ${delay}ms... (Attempt ${retries + 1} of ${this.retryOptions.maxRetries})`);
-      await new Promise(resolve => setTimeout(resolve, delay));
-
-      return this.retryWithBackoff(operation, retries + 1);
+      result = Err(error as SearcherClientError);
     }
+
+    if (result.ok) {
+      return result;
+    }
+
+    if (retries >= this.retryOptions.maxRetries || !this.isRetryableError(result.error)) {
+      return result;
+    }
+
+    const delay = Math.min(
+      this.retryOptions.baseDelay * Math.pow(this.retryOptions.factor, retries),
+      this.retryOptions.maxDelay
+    );
+    console.warn(`Operation failed. Retrying in ${delay}ms... (Attempt ${retries + 1} of ${this.retryOptions.maxRetries})`);
+    await new Promise(resolve => setTimeout(resolve, delay));
+
+    return this.retryWithBackoff(operation, retries + 1);
   }
 
   private isRetryableError(error: any): boolean {
