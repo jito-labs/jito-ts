@@ -51,6 +51,21 @@ export type Tip = 'tip';
  */
 export type SimulationSlotConfig = Commitment | Slot | Tip;
 
+function normalizeCommitment(commitment: Commitment): Commitment {
+  switch (commitment) {
+    case 'recent':
+      return 'processed';
+    case 'single':
+    case 'singleGossip':
+      return 'confirmed';
+    case 'root':
+    case 'max':
+      return 'finalized';
+    default:
+      return commitment;
+  }
+}
+
 export type SimulateBundleConfig = {
   /** list of accounts to return the pre transaction execution state for. The length of the array must be equal to the number transactions in the bundle */
   preExecutionAccountsConfigs: ({
@@ -412,8 +427,8 @@ export class JitoRpcConnection extends Connection {
   ): Promise<RpcResponseAndContext<SimulatedBundleResponse>> {
     if (
       config &&
-      bundle.length !== config.preExecutionAccountsConfigs.length &&
-      bundle.length !== config.postExecutionAccountsConfigs.length
+      (bundle.length !== config.preExecutionAccountsConfigs.length ||
+        bundle.length !== config.postExecutionAccountsConfigs.length)
     ) {
       throw new Error(
         'pre/post execution account config length must match bundle length'
@@ -424,8 +439,28 @@ export class JitoRpcConnection extends Connection {
       return Buffer.from(versionedTx.serialize()).toString('base64');
     });
 
-    const simulationConfig: any = config || {};
-    simulationConfig.transactionEncoding = 'base64';
+    const {simulationBank, ...accountConfig} = config ?? {
+      preExecutionAccountsConfigs: bundle.map(() => null),
+      postExecutionAccountsConfigs: bundle.map(() => null),
+    };
+    const simulationConfig = {
+      ...accountConfig,
+      transactionEncoding: 'base64',
+      ...(simulationBank === undefined
+        ? {}
+        : {
+            simulationBank:
+              typeof simulationBank === 'number'
+                ? {slot: simulationBank}
+                : simulationBank === 'tip'
+                ? 'tip'
+                : {
+                    commitment: {
+                      commitment: normalizeCommitment(simulationBank),
+                    },
+                  },
+          }),
+    };
     const args = [{encodedTransactions}, simulationConfig];
     const unsafeRes = await this._rpcRequest('simulateBundle', args);
     const res = create(unsafeRes, SimulatedBundleResponseStruct);
