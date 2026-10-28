@@ -329,8 +329,12 @@ export class SearcherClient {
       onError(e);
     });
 
-    for await (const bundleResult of stream) {
-      yield bundleResult;
+    try {
+      for await (const bundleResult of stream) {
+        yield bundleResult;
+      }
+    } finally {
+      stream.cancel();
     }
   }
 }
